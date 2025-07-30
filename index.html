@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTM JSON Editor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>GTM JSON Editor</h1>
+            <p>Import, edit, and export Google Tag Manager container files</p>
+        </header>
+
+        <main>
+            <div class="import-section">
+                <h2>Import GTM Container</h2>
+                <div class="file-upload">
+                    <input type="file" id="fileInput" accept=".json" />
+                    <label for="fileInput" class="upload-btn">Choose JSON File</label>
+                    <span class="file-name" id="fileName">No file selected</span>
+                </div>
+            </div>
+
+            <div class="editor-section" id="editorSection" style="display: none;">
+                <div class="editor-header">
+                    <h2>Container Editor</h2>
+                    <div class="container-info" id="containerInfo"></div>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="tags">Tags</button>
+                    <button class="tab-btn" data-tab="triggers">Triggers</button>
+                    <button class="tab-btn" data-tab="variables">Variables</button>
+                    <button class="tab-btn" data-tab="folders">Folders</button>
+                    <button class="tab-btn" data-tab="settings">Settings</button>
+                </div>
+
+                <div class="bulk-actions">
+                    <div class="bulk-controls">
+                        <button id="selectAllBtn">Select All</button>
+                        <button id="deselectAllBtn">Deselect All</button>
+                        <button id="bulkEditBtn" disabled>Bulk Edit Selected</button>
+                        <button id="bulkDeleteBtn" disabled>Delete Selected</button>
+                    </div>
+                    <div class="search-filter">
+                        <input type="text" id="searchInput" placeholder="Search items...">
+                        <select id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="enabled">Enabled</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="tab-content">
+                    <div id="tags" class="tab-pane active">
+                        <div class="items-list" id="tagsList"></div>
+                    </div>
+                    <div id="triggers" class="tab-pane">
+                        <div class="items-list" id="triggersList"></div>
+                    </div>
+                    <div id="variables" class="tab-pane">
+                        <div class="items-list" id="variablesList"></div>
+                    </div>
+                    <div id="folders" class="tab-pane">
+                        <div class="items-list" id="foldersList"></div>
+                    </div>
+                    <div id="settings" class="tab-pane">
+                        <div class="settings-form" id="settingsForm"></div>
+                    </div>
+                </div>
+
+                <div class="export-section">
+                    <button id="exportBtn" class="export-btn">Export Modified JSON</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for editing items -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Edit Item</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button id="saveBtn" class="btn-primary">Save Changes</button>
+                <button id="cancelBtn" class="btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Edit Modal -->
+    <div id="bulkEditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Bulk Edit Selected Items</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="bulk-edit-options">
+                    <h4>Apply to selected items:</h4>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="bulkToggleStatus"> Toggle Status (Enable/Disable)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="bulkUpdateFolder"> Move to Folder:
+                        </label>
+                        <select id="bulkFolderSelect" disabled>
+                            <option value="">No Folder</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="bulkFindReplace"> Find & Replace in Names:
+                        </label>
+                        <div class="find-replace">
+                            <input type="text" id="findText" placeholder="Find text" disabled>
+                            <input type="text" id="replaceText" placeholder="Replace with" disabled>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="applyBulkBtn" class="btn-primary">Apply Changes</button>
+                <button id="cancelBulkBtn" class="btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
