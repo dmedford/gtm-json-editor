@@ -97,6 +97,16 @@ header p {
     font-size: 14px;
 }
 
+.security-notice {
+    background: #1c2832;
+    border: 1px solid #58a6ff;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0 20px 0;
+    font-size: 13px;
+    color: #58a6ff;
+}
+
 .property-sync-form {
     background: #0d1117;
     padding: 20px;

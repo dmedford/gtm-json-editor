@@ -10,7 +10,7 @@ class GTMEditor {
         this.sheetsData = null;
         this.pendingChanges = null;
         this.SHEET_ID = '1Q2W7RIOBpTNhtOHVmwjhcVPyJktgXQUqu-UB-ieTUSQ';
-        this.API_KEY = 'AIzaSyBbnk-3UNkAzAPKbuFvwdVzwpE9_yobgrs';
+        this.API_KEY = null; // Will be prompted from user
         
         this.initializeEventListeners();
     }
@@ -1281,8 +1281,10 @@ class GTMEditor {
         }
 
         if (!this.API_KEY) {
-            this.promptForApiKey();
-            return;
+            if (!this.promptForApiKey()) {
+                this.showSyncStatus('API key required for Google Sheets sync', 'error');
+                return;
+            }
         }
 
         console.log('🔄 Starting Google Sheets sync for property:', propertyName);
@@ -1829,10 +1831,23 @@ class GTMEditor {
     }
 
     promptForApiKey() {
-        const apiKey = prompt('Please enter your Google Sheets API key:');
-        if (apiKey) {
-            this.API_KEY = apiKey;
-            this.syncFromSheet();
+        const apiKey = prompt(`🔐 Google Sheets API Key Required
+        
+Please enter your Google Sheets API key to sync data.
+
+⚠️ SECURITY NOTE: This key will only be stored temporarily in your browser session and never saved permanently.
+
+Get your API key from: Google Cloud Console → APIs & Services → Credentials
+
+API Key:`);
+        
+        if (apiKey && apiKey.trim()) {
+            this.API_KEY = apiKey.trim();
+            console.log('🔐 API key set (session only - not stored permanently)');
+            return true;
+        } else {
+            console.log('❌ No API key provided - sheets sync unavailable');
+            return false;
         }
     }
 
@@ -1914,8 +1929,10 @@ class GTMEditor {
         }
 
         if (!this.API_KEY) {
-            this.promptForApiKey();
-            return;
+            if (!this.promptForApiKey()) {
+                this.showSyncStatusMain('API key required for Google Sheets sync', 'error');
+                return;
+            }
         }
 
         console.log('🔄 Starting main workflow Google Sheets sync for property:', propertyInput);

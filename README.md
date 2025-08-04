@@ -30,8 +30,13 @@ A professional web-based tool for importing, editing, and exporting Google Tag M
 **Google Sheets Setup:**
 1. Get API key from Google Cloud Console → APIs & Services → Credentials
 2. Enable Google Sheets API v4
-3. Ensure sheet is publicly viewable or configure authentication  
-4. Use "Tracker Sheet" tab with standardized column names
+3. **Configure API Key Restrictions** (IMPORTANT for security):
+   - Set HTTP referrers restriction to your domain/localhost
+   - Restrict to Google Sheets API only
+4. Ensure sheet is publicly viewable
+5. Use "Tracker Sheet" tab with standardized column names
+
+**Security:** Your API key is requested only when needed and stored temporarily in browser session only.
 
 ## 📁 Architecture
 
@@ -48,7 +53,21 @@ A professional web-based tool for importing, editing, and exporting Google Tag M
 
 **Variable Detection:** Merges 6 GTM variable arrays with deduplication by variable ID
 
-**Security:** Client-side only, API key for sheets access, HTML escaping for XSS prevention
+**Security:** Client-side only, secure API key handling, HTML escaping for XSS prevention
+
+## 🔐 Security Features
+
+**API Key Protection:**
+- No hardcoded API keys in source code
+- User provides API key only when needed via secure prompt
+- API key stored temporarily in browser session only (never persisted)
+- Recommendations for API key restrictions provided
+
+**Additional Security:**
+- Client-side only processing (no server-side data storage)
+- HTML escaping to prevent XSS attacks  
+- Input validation and sanitization
+- No persistent storage of sensitive data
 
 ## 🎯 Supported Variables
 
