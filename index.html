@@ -14,12 +14,71 @@
         </header>
 
         <main>
-            <div class="import-section">
-                <h2>Import GTM Container</h2>
-                <div class="file-upload">
-                    <input type="file" id="fileInput" accept=".json" />
-                    <label for="fileInput" class="upload-btn">Choose JSON File</label>
-                    <span class="file-name" id="fileName">No file selected</span>
+            <div class="workflow-container">
+                <div class="workflow-step" id="step1">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h2>Import GTM Template</h2>
+                    </div>
+                    <p>Upload your GTM container JSON file to get started</p>
+                    <div class="file-upload">
+                        <input type="file" id="fileInput" accept=".json" />
+                        <label for="fileInput" class="upload-btn">Choose JSON File</label>
+                        <span class="file-name" id="fileName">No file selected</span>
+                    </div>
+                </div>
+
+                <div class="workflow-step" id="step2" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h2>Sync with Property Data</h2>
+                    </div>
+                    <p>Enter the property name OR website URL to automatically update variables from your Google Sheet</p>
+                    
+                    <div class="property-sync-form">
+                        <div class="property-input-group">
+                            <div class="input-tabs">
+                                <button type="button" class="input-tab active" data-tab="name">📝 Property Name</button>
+                                <button type="button" class="input-tab" data-tab="url">🌐 Website URL</button>
+                            </div>
+                            
+                            <div class="input-container">
+                                <div id="nameInput" class="input-section active">
+                                    <label for="propertyNameInputMain">Property Name:</label>
+                                    <input type="text" id="propertyNameInputMain" placeholder="Enter property name (e.g., Morada Crossings)" />
+                                </div>
+                                
+                                <div id="urlInput" class="input-section">
+                                    <label for="propertyUrlInputMain">Website URL:</label>
+                                    <input type="url" id="propertyUrlInputMain" placeholder="Enter website URL (e.g., https://moradacrossings.com)" />
+                                </div>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                <button id="syncFromSheetBtnMain" class="sync-btn" disabled>🔄 Sync from Google Sheet</button>
+                                <button id="skipSyncBtn" class="skip-btn">⏭️ Skip & Continue</button>
+                            </div>
+                        </div>
+                        
+                        <div id="syncStatusMain" class="sync-status-main"></div>
+                        
+                        <div id="syncPreviewMain" class="sync-preview-main" style="display: none;">
+                            <h4>📋 Preview Changes</h4>
+                            <div id="previewContentMain"></div>
+                            <div class="preview-actions-main">
+                                <button id="applyChangesBtnMain" class="btn-primary">✅ Apply Changes & Continue</button>
+                                <button id="cancelChangesBtnMain" class="btn-secondary">❌ Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="workflow-step" id="step3" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h2>Review & Export</h2>
+                    </div>
+                    <p>Review your updated container and export when ready</p>
                 </div>
             </div>
 
@@ -68,7 +127,31 @@
                         <div class="items-list" id="foldersList"></div>
                     </div>
                     <div id="settings" class="tab-pane">
-                        <div class="settings-form" id="settingsForm"></div>
+                        <div class="settings-form" id="settingsForm">
+                            <div class="sheets-sync-section">
+                                <h3>🔗 Google Sheets Integration</h3>
+                                <p>Update GTM variables from your tracking spreadsheet</p>
+                                
+                                <div class="form-group">
+                                    <label for="propertyNameInput">Property Name:</label>
+                                    <input type="text" id="propertyNameInput" placeholder="Enter property name (e.g., Morada Crossings)" />
+                                </div>
+                                
+                                <div class="form-group">
+                                    <button id="syncFromSheetBtn" class="btn-primary" disabled>🔄 Sync from Google Sheet</button>
+                                    <span id="syncStatus" class="sync-status"></span>
+                                </div>
+                                
+                                <div id="syncPreview" class="sync-preview" style="display: none;">
+                                    <h4>📋 Preview Changes</h4>
+                                    <div id="previewContent"></div>
+                                    <div class="preview-actions">
+                                        <button id="applyChangesBtn" class="btn-primary">✅ Apply Changes</button>
+                                        <button id="cancelChangesBtn" class="btn-secondary">❌ Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

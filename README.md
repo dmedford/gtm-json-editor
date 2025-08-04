@@ -1,145 +1,95 @@
 # GTM JSON Editor
 
-A web-based tool for importing, editing, and exporting Google Tag Manager (GTM) container JSON files. This tool provides an intuitive interface for bulk editing tags, triggers, variables, and folders within GTM containers.
+A professional web-based tool for importing, editing, and exporting Google Tag Manager (GTM) container JSON files with Google Sheets integration for dynamic variable updates.
 
 ## 🚀 Features
 
-### Core Functionality
-- **Import GTM JSON Files**: Upload and parse Google Tag Manager container export files
-- **Interactive Editor**: Navigate between Tags, Triggers, Variables, Folders, and Settings
-- **Individual Item Editing**: Edit properties of tags, triggers, and variables with modal forms
-- **Export Modified JSON**: Download updated container files ready for GTM import
+- **🔄 Step-by-Step Workflow**: Import GTM Template → Sync with Property Data → Review & Export
+- **🔗 Google Sheets Integration**: Dynamically update GTM variables from live tracking spreadsheets
+- **🎯 Smart Variable Matching**: Automatic detection of GA4, Google Ads, and TTD variables using standardized naming
+- **🌐 Flexible Property Lookup**: Enter property name OR website URL for automatic data matching
+- **👀 Preview Changes**: Review all updates before applying with before/after comparison
+- **📊 Comprehensive Updates**: Updates 10+ variables including GA4 ID, Conversion Labels, CallRail HTML
+- **🔧 Advanced Parameter Editing**: Edit Google Ads conversion IDs, Custom HTML, URLs, and all tag parameters
+- **📁 Advanced Variable Detection**: Supports all 6 GTM variable storage locations with accurate counts
+- **🔀 Bulk Operations**: Select/deselect all, status toggle, folder assignment, find & replace, delete
+- **🎨 Professional Dark Theme**: GitHub-inspired dark mode with polished UI
+- **🔍 Real-time Search & Filter**: Find items by name, type, or status
 
-### Bulk Editing Capabilities
-- **Select All/Deselect All**: Quickly manage multiple items
-- **Bulk Status Toggle**: Enable/disable multiple tags at once
-- **Bulk Folder Assignment**: Move multiple items to different folders
-- **Bulk Find & Replace**: Update item names across selections
-- **Bulk Delete**: Remove multiple items simultaneously
+## 🛠️ Quick Start
 
-### Enhanced User Experience
-- **Search & Filter**: Find items by name, type, or status
-- **Real-time Updates**: See changes immediately in the interface
-- **Responsive Design**: Works on desktop and mobile devices
-- **Comprehensive Logging**: Detailed console output for debugging
-- **Data Validation**: Prevents data corruption during editing
+**Prerequisites:** Modern web browser, GTM container export JSON file, Google Sheets API key
 
-## 🛠️ Getting Started
+**Installation:** Open `index.html` directly in browser - no server required
 
-### Prerequisites
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- Google Tag Manager container export file (.json)
+**Step-by-Step Usage:**
+1. **Import GTM Template**: Upload your GTM container JSON file
+2. **Sync with Property Data**: Enter property name OR website URL, sync from Google Sheet
+3. **Review & Export**: Preview changes, apply updates, and download modified JSON
 
-### Installation
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/gtm-json-editor.git
-   cd gtm-json-editor
-   ```
+**Google Sheets Setup:**
+1. Get API key from Google Cloud Console → APIs & Services → Credentials
+2. Enable Google Sheets API v4
+3. Ensure sheet is publicly viewable or configure authentication  
+4. Use "Tracker Sheet" tab with standardized column names
 
-2. Open `index.html` in your web browser
-   - No server setup required - runs entirely in the browser
-   - All processing happens client-side for security
+## 📁 Architecture
 
-### Usage
+**Files:** `index.html`, `styles.css`, `script.js`, `CLAUDE.md`, `README.md`
 
-1. **Import Container**
-   - Click "Choose JSON File" to upload your GTM container export
-   - The tool will automatically parse and display container information
+**Core Class:** `GTMEditor` - Manages application state, UI interactions, and Google Sheets integration
 
-2. **Navigate & Edit**
-   - Use tabs to switch between Tags, Triggers, Variables, Folders, and Settings
-   - Click item names or "Edit" buttons to modify individual items
-   - Use search and filter options to find specific items
+**🔗 Google Sheets Integration:**
+- **API Integration:** Google Sheets API v4 with configurable sheet ID and API key
+- **Smart Property Matching:** Supports both property name and website URL lookup
+- **Standardized Variable Detection:** Pattern matching for GA4, Google Ads, and TTD variables
+- **Data Mapping:** Automatic column-to-variable mapping with comprehensive coverage
+- **Change Preview:** Before/after comparison with user confirmation
 
-3. **Bulk Operations**
-   - Select multiple items using checkboxes
-   - Use bulk action buttons to apply changes to selected items
-   - Available bulk operations: status toggle, folder assignment, find & replace, delete
+**Variable Detection:** Merges 6 GTM variable arrays with deduplication by variable ID
 
-4. **Export Changes**
-   - Click "Export Modified JSON" to download your updated container
-   - Import the file into your target GTM container
+**Security:** Client-side only, API key for sheets access, HTML escaping for XSS prevention
 
-## 📁 Project Structure
+## 🎯 Supported Variables
 
+**Automatic Updates (10+ variables):**
+- GA4 Measurement ID
+- Google Ads Conversion ID  
+- Google Ads Conversion Labels (Apply Start/End, Contact Start/End, Tour Start/End, Virtual Tour)
+- CallRail HTML Tag
+- TTD Conversion Tracking (Apply, Contact, Tour, Virtual Tour - when data available)
+
+**Required GTM Variable Naming Convention:**
 ```
-gtm-json-editor/
-├── index.html          # Main HTML file with UI structure
-├── styles.css          # CSS styling for responsive design
-├── script.js           # JavaScript application logic
-├── README.md           # Project documentation
-└── .gitignore          # Git ignore file
+Variable - GA4 - Measurement ID
+Variable - GAds - Conversion ID
+Variable - GAds - Conversion Label - Apply Start
+Variable - GAds - Conversion Label - Apply End
+Variable - GAds - Conversion Label - Contact Start
+Variable - GAds - Conversion Label - Contact End
+Variable - GAds - Conversion Label - Tour Start
+Variable - GAds - Conversion Label - Tour End
+Variable - GAds - Conversion Label - Virtual Tour
+Variable - TTD - CT - Apply Start
+Variable - TTD - CT - Apply End
+Variable - TTD - CT - Contact Start
+Variable - TTD - CT - Contact End
+Variable - TTD - CT - Schedule a Tour Start
+Variable - TTD - CT - Schedule a Tour End
+Variable - TTD - CT - Virtual Tour
 ```
 
-## 🔍 Debugging
+## 🐛 Known Limitations
 
-The application includes comprehensive console logging to help debug issues:
-
-1. Open browser developer tools (F12 → Console)
-2. Upload your GTM JSON file
-3. Watch detailed logging output including:
-   - File structure analysis
-   - Item counts and data validation
-   - Rendering process details
-   - Filter and search operations
-   - Edit form generation
-
-## 🏗️ GTM JSON Structure
-
-The tool works with standard GTM container export format containing:
-
-- **Container Version**: Metadata about the container
-- **Tags**: Tracking tags and their configurations
-- **Triggers**: Conditions that fire tags
-- **Variables**: Data layer variables and constants
-- **Folders**: Organizational structure for items
-
-## 🛡️ Security & Privacy
-
-- **Client-Side Only**: All processing happens in your browser
-- **No Data Upload**: Files never leave your computer
-- **No External Dependencies**: Works completely offline
-- **Data Validation**: Prevents corruption during editing
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit issues and pull requests.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- Google Sheets API requires publicly viewable sheet or proper authentication
+- Requires standardized GTM variable naming convention for reliable matching
+- Large containers (500+ items) may have slower rendering
+- No GTM business rule validation (handled by GTM on import)
 
 ## ⚠️ Disclaimer
 
-This tool is not officially affiliated with Google or Google Tag Manager. Always backup your containers before making bulk changes and test thoroughly in a development environment.
-
-## 🐛 Known Issues
-
-- Large containers (500+ items) may experience slower rendering
-- Complex tag configurations may not display all parameters in edit mode
-- Some GTM-specific validation rules are not enforced
+Not affiliated with Google/GTM. Always backup containers before changes and test in development environment. Keep API keys secure.
 
 ## 📞 Support
 
-If you encounter issues or have questions:
-
-1. Check the browser console for detailed error messages
-2. Ensure your GTM JSON file is a valid container export
-3. Open an issue on GitHub with details about your problem
-4. Include console logs and sample data (remove sensitive information)
-
-## 🚀 Future Enhancements
-
-- [ ] Advanced parameter editing for tags and triggers
-- [ ] Tag template support
-- [ ] Workspace management
-- [ ] Import/export validation
-- [ ] Container comparison tools
-- [ ] Custom tag type support
+For issues: Check browser console (F12), verify API key and sheet access, ensure valid GTM JSON, open GitHub issue with console logs.

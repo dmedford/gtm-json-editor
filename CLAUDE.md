@@ -1,131 +1,140 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Development guidance for Claude Code when working with the GTM JSON Editor.
 
 ## Project Overview
 
-This is a client-side web application for editing Google Tag Manager (GTM) container JSON files. The application is built with vanilla HTML, CSS, and JavaScript with no external dependencies or build process required.
+Professional client-side GTM container JSON editor with step-by-step workflow and Google Sheets integration. Features automatic variable detection using standardized naming conventions, dual property lookup (name/URL), and comprehensive variable updates for GA4, Google Ads, and TTD tracking.
 
 ## Development Commands
 
-**Local Development:**
-- Open `index.html` directly in a web browser - no server required
-- For development with live reload, use any simple HTTP server:
-  - `python -m http.server 8000` (Python)
-  - `npx serve .` (if Node.js available)
-  - Any local development server
-
-**Testing:**
-- No automated tests currently exist
-- Manual testing: Import a GTM JSON file and verify all functionality works
-- Check browser console (F12) for debugging output during development
-
-**Debugging:**
-- All debug information is logged to browser console with emoji prefixes
-- Import process shows detailed file structure analysis
-- Rendering operations show step-by-step processing
-- Edit operations show form generation and data handling
+**Run:** Open `index.html` in browser (no server required)
+**Debug:** Browser console (F12) - emoji-prefixed logging with detailed pattern matching
+**Test:** Import GTM JSON, test property sync with name/URL, verify all 10+ variable updates
 
 ## Architecture
 
-### Core Application Structure
+### Core Architecture
 
-**Main Class:** `GTMEditor` - Single class that manages the entire application state and UI interactions.
+**Main Class:** `GTMEditor` - Application state, step-by-step workflow management, and Google Sheets integration
 
-**Key State Properties:**
-- `gtmData` - Stores the parsed GTM JSON container data
-- `selectedItems` - Set of currently selected item IDs for bulk operations
-- `currentTab` - Active tab ('tags', 'triggers', 'variables', 'folders', 'settings')
-- `currentEditItem` - Item being edited in modal
-- `filteredItems` - Current filtered/searched items for display
+**Key Properties:** 
+- Core: `gtmData`, `selectedItems`, `currentTab`, `currentEditItem`, `filteredItems`
+- Sheets: `sheetsData`, `pendingChanges`, `SHEET_ID`, `API_KEY`
+- Workflow: Step progression, property input handling (name/URL), sync status
 
-### Data Flow
+**Data Flow:** Import GTM → Property Sync (Optional) → Review/Edit → Export
 
-1. **Import:** User selects JSON file → `handleFileImport()` → Parse and validate → Update UI
-2. **Display:** `renderCurrentTab()` → `render{Tags|Triggers|Variables|Folders}()` → Generate HTML → Attach event listeners
-3. **Edit:** User clicks item → `editItem()` → `generateEditForm()` → Show modal → `saveItemChanges()` → Update data → Re-render
-4. **Bulk Operations:** Select items → Enable bulk buttons → Apply changes → Update multiple items → Re-render
-5. **Export:** `exportJSON()` → Create blob from modified `gtmData` → Download file
+### Step-by-Step Workflow
+
+**Step 1: Import GTM Template**
+- File upload and JSON parsing
+- Container info display with variable counts
+- Automatic progression to Step 2
+
+**Step 2: Sync with Property Data**
+- Tabbed input: Property Name OR Website URL
+- Google Sheets API integration (A:AZ columns)
+- Pattern matching for variable detection
+- Preview changes before applying
+- Skip option to proceed without sync
+
+**Step 3: Review & Export**
+- Full container editor with tabs (Tags, Triggers, Variables, Folders, Settings)
+- Bulk operations and search/filter
+- Export modified JSON
 
 ### GTM Data Structure
 
-The application expects standard GTM container export format:
+**Container Format:** Standard GTM export with `containerVersion` containing arrays for `tag`, `trigger`, `variable`, `folder`
+
+**Variable Storage (6 locations):**
+- `variable` (custom)
+- `builtInVariable`, `enabledBuiltInVariable`, `disabledBuiltInVariable` (built-ins)
+- `workspaceBuiltInVariable`, `customVariable` (alternatives)
+
+**Critical:** Merge all variable arrays with deduplication by `variableId`
+
+### Key Methods
+
+**Workflow:** `updateWorkflowStep()`, `proceedToStep3()`, `skipToStep3()`
+**File:** `handleFileImport()`, `exportJSON()`
+**Render:** `renderCurrentTab()`, `render{Tags|Triggers|Variables|Folders}()`, `filterItemsBySearch()`
+**Edit:** `editItem()`, `generateEditForm()`, `saveItemChanges()`
+**Bulk:** `selectAllItems()`, `applyBulkChanges()`, `bulkDeleteItems()`
+**Property Input:** `switchInputTab()`, `getCurrentPropertyInput()`, `findPropertyRowByInput()`, `cleanUrl()`
+**Sheets:** `syncFromSheetMain()`, `findGTMMatches()`, `getAllVariables()`, `showPreviewMain()`, `applySheetChangesMain()`
+**Pattern Matching:** `findVariableByPattern()`, `findVariableBySpecificPattern()`
+
+### Implementation Details
+
+**Google Sheets Integration:**
+- **API Integration:** Google Sheets API v4 with fetch() calls to `sheets.googleapis.com` (A:AZ columns)
+- **Dual Property Lookup:** Supports property name OR website URL matching with `findPropertyRowByInput()`
+- **Standardized Pattern Matching:** Reliable variable detection using consistent naming conventions
+- **Comprehensive Updates:** 10+ variables including GA4, Google Ads labels, TTD tracking, CallRail
+- **Change Preview:** Before/after comparison with user confirmation via `showPreviewMain()`
+- **Smart Workflow:** Automatic progression through steps with skip options
+
+**Variable Merging:** 6 arrays → deduplicate by `variableId` → accurate counts via `getAllVariables()`
+
+**Parameter Editing:** Type-specific forms (HTML→textarea, URL→validation, ID→text, Boolean→checkbox)
+
+**Security:** HTML escaping, client-side processing, API key for sheets access
+
+**UI:** Professional dark theme, Settings tab with Google Sheets integration section
+
+**Logging:** Emoji prefixes - 🔄 🏷️ ⚡ 🔢 📁 🔍 ✏️ 📝 💾 📋 🔗
+
+### Security & Limitations
+
+**Security:** Client-side only, File API, HTML escaping, Google Sheets API key required
+
+**Standardized Variable Names:** Requires consistent GTM variable naming for reliable pattern matching
+
+## Required GTM Variable Naming Convention
+
+**Google Ads Variables:**
 ```
-gtmData = {
-  exportFormatVersion: "2",
-  exportTime: "...",
-  containerVersion: {
-    accountId: "...",
-    containerId: "...",
-    containerVersionId: "...",
-    name: "Container Name",
-    tag: [],      // Array of tag objects
-    trigger: [],  // Array of trigger objects  
-    variable: [], // Array of variable objects
-    folder: []    // Array of folder objects
-  }
-}
+Variable - GAds - Conversion ID
+Variable - GAds - Conversion Label - Apply Start
+Variable - GAds - Conversion Label - Apply End
+Variable - GAds - Conversion Label - Contact Start
+Variable - GAds - Conversion Label - Contact End
+Variable - GAds - Conversion Label - Tour Start
+Variable - GAds - Conversion Label - Tour End
+Variable - GAds - Conversion Label - Virtual Tour
 ```
 
-### Key Methods by Functionality
+**GA4 & TTD Variables:**
+```
+Variable - GA4 - Measurement ID
+Variable - TTD - CT - Apply Start
+Variable - TTD - CT - Apply End
+Variable - TTD - CT - Contact Start
+Variable - TTD - CT - Contact End
+Variable - TTD - CT - Schedule a Tour Start
+Variable - TTD - CT - Schedule a Tour End
+Variable - TTD - CT - Virtual Tour
+```
 
-**File Operations:**
-- `handleFileImport()` - Process uploaded JSON files with comprehensive logging
-- `exportJSON()` - Generate and download modified JSON
+**Limitations:** 
+- Google Sheets API requires publicly viewable sheet or authentication
+- Requires standardized GTM variable naming convention
+- Large containers (500+ items) slower rendering
+- No GTM business rule validation
 
-**Rendering:**
-- `renderCurrentTab()` - Main rendering dispatcher
-- `render{Tags|Triggers|Variables|Folders}()` - Category-specific rendering with proper index mapping
-- `filterItemsBySearch()` - Search and filter logic with debugging
+## Debugging
 
-**Editing:**
-- `editItem(type, index)` - Open edit modal for individual items
-- `generateEditForm(type, item)` - Create form HTML with HTML escaping
-- `saveItemChanges()` - Update item data from form inputs
+**Workflow:** Browser console (F12) → Upload GTM file → Test property sync → Check detailed pattern matching logs
 
-**Bulk Operations:**
-- `selectAllItems()` / `deselectAllItems()` - Selection management
-- `applyBulkChanges()` - Apply bulk edits to selected items
-- `bulkDeleteItems()` - Remove multiple items
+**Google Sheets Issues:**
+- **API Errors:** Check API key validity, sheet permissions, network connectivity
+- **Property Not Found:** Verify property name/URL spelling, check sheet columns
+- **Variable Matching:** Check "🔍 Pattern search" and "✅ Match" logs for each variable
+- **Final Summary:** Look for "🎯 FINAL MATCHING SUMMARY" showing all detected variables
 
-### Important Implementation Details
-
-**Index Mapping:** The application maintains both filtered and original item arrays. When rendering filtered results, it maps back to original indices to ensure edit operations work on the correct items.
-
-**HTML Escaping:** All user data is escaped before insertion into HTML to prevent XSS issues.
-
-**Event Handling:** Uses inline onclick handlers for dynamically generated content, with the global `gtmEditor` instance.
-
-**Logging Strategy:** Comprehensive console logging with emoji prefixes for easy debugging:
-- 🔄 Process steps
-- ✅ Success operations  
-- ❌ Errors
-- 🏷️ Tags, ⚡ Triggers, 🔢 Variables, 📁 Folders
-- 🔍 Search/filter operations
-- ✏️ Edit operations
-- 📝 Form generation
-
-### Security Considerations
-
-- All processing is client-side - no data leaves the user's computer
-- Files are processed using the File API - no server uploads
-- HTML content is escaped to prevent XSS
-- No external dependencies or CDN usage
-
-### Known Limitations
-
-- Large containers (500+ items) may have slower rendering performance
-- Complex tag parameter structures are shown as read-only previews
-- No validation of GTM-specific business rules (handled by GTM on import)
-- Search is simple text matching, not advanced querying
-
-## Debugging Workflow
-
-When users report issues:
-
-1. Ask them to open browser console (F12 → Console)
-2. Have them upload their GTM file and capture console output
-3. Look for the structured logging to identify where the process fails
-4. Check for data structure issues in the "GTM Data Structure Analysis" output
-5. Verify item counts match expectations
-6. Look for filtering or rendering errors in the detailed logs
+**Common Issues:**
+- **Wrong Variable Count:** Check "Variable breakdown" logs and standardized naming
+- **Pattern Matching Failures:** Verify GTM variables follow exact naming convention
+- **Workflow Issues:** Check step progression logs and input validation

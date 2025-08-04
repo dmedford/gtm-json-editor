@@ -6,6 +6,12 @@ class GTMEditor {
         this.currentEditItem = null;
         this.filteredItems = [];
         
+        // Google Sheets integration
+        this.sheetsData = null;
+        this.pendingChanges = null;
+        this.SHEET_ID = '1Q2W7RIOBpTNhtOHVmwjhcVPyJktgXQUqu-UB-ieTUSQ';
+        this.API_KEY = 'AIzaSyBbnk-3UNkAzAPKbuFvwdVzwpE9_yobgrs';
+        
         this.initializeEventListeners();
     }
 
@@ -32,6 +38,25 @@ class GTMEditor {
         
         // Export
         document.getElementById('exportBtn').addEventListener('click', this.exportJSON.bind(this));
+        
+        // Google Sheets integration (Settings tab - legacy)
+        document.getElementById('propertyNameInput').addEventListener('input', this.onPropertyNameChange.bind(this));
+        document.getElementById('syncFromSheetBtn').addEventListener('click', this.syncFromSheet.bind(this));
+        document.getElementById('applyChangesBtn').addEventListener('click', this.applySheetChanges.bind(this));
+        document.getElementById('cancelChangesBtn').addEventListener('click', this.cancelSheetChanges.bind(this));
+
+        // Main workflow Google Sheets integration
+        document.getElementById('propertyNameInputMain').addEventListener('input', this.onPropertyInputChangeMain.bind(this));
+        document.getElementById('propertyUrlInputMain').addEventListener('input', this.onPropertyInputChangeMain.bind(this));
+        document.getElementById('syncFromSheetBtnMain').addEventListener('click', this.syncFromSheetMain.bind(this));
+        document.getElementById('applyChangesBtnMain').addEventListener('click', this.applySheetChangesMain.bind(this));
+        document.getElementById('cancelChangesBtnMain').addEventListener('click', this.cancelSheetChangesMain.bind(this));
+        document.getElementById('skipSyncBtn').addEventListener('click', this.skipToStep3.bind(this));
+
+        // Input tab switching
+        document.querySelectorAll('.input-tab').forEach(tab => {
+            tab.addEventListener('click', this.switchInputTab.bind(this));
+        });
         
         // Modal controls
         this.setupModalControls();
@@ -108,11 +133,50 @@ class GTMEditor {
                 const variables = cv.variable || [];
                 const folders = cv.folder || [];
                 
+                // Check for built-in variables that might be stored separately
+                const builtInVariables = cv.builtInVariable || [];
+                const customVariables = cv.customVariable || [];
+                
+                // Check for other possible variable locations
+                const enabledBuiltInVariables = cv.enabledBuiltInVariable || [];
+                const disabledBuiltInVariables = cv.disabledBuiltInVariable || [];
+                const workspaceBuiltInVariables = cv.workspaceBuiltInVariable || [];
+                
                 console.log('📊 Item Counts:');
                 console.log('  - Tags:', tags.length);
                 console.log('  - Triggers:', triggers.length);
-                console.log('  - Variables:', variables.length);
+                console.log('  - Variables (custom):', variables.length);
+                console.log('  - Built-in Variables:', builtInVariables.length);
+                console.log('  - Custom Variables (alt):', customVariables.length);
+                console.log('  - Enabled Built-in Variables:', enabledBuiltInVariables.length);
+                console.log('  - Disabled Built-in Variables:', disabledBuiltInVariables.length);
+                console.log('  - Workspace Built-in Variables:', workspaceBuiltInVariables.length);
                 console.log('  - Folders:', folders.length);
+                
+                const totalVariables = variables.length + builtInVariables.length + customVariables.length + 
+                                     enabledBuiltInVariables.length + disabledBuiltInVariables.length + workspaceBuiltInVariables.length;
+                console.log('  - TOTAL Variables:', totalVariables);
+                
+                // Log all container version properties to see what else might be there
+                console.log('📋 All container version properties:', Object.keys(cv));
+                
+                // Look for any other properties that might contain variables
+                const allProps = Object.keys(cv);
+                const variableProps = allProps.filter(prop => prop.toLowerCase().includes('variable'));
+                console.log('📋 All properties containing "variable":', variableProps);
+                
+                // Log sample data from each variable array to understand structure
+                if (builtInVariables.length > 0) {
+                    console.log('📋 Sample built-in variable:', builtInVariables[0]);
+                }
+                if (enabledBuiltInVariables.length > 0) {
+                    console.log('📋 Sample enabled built-in variable:', enabledBuiltInVariables[0]);
+                }
+                
+                // Check if variables might be stored at root level
+                console.log('📋 Root level properties:', Object.keys(this.gtmData));
+                const rootVariableProps = Object.keys(this.gtmData).filter(prop => prop.toLowerCase().includes('variable'));
+                console.log('📋 Root properties containing "variable":', rootVariableProps);
                 
                 // Log first few items of each type for inspection
                 if (tags.length > 0) {
@@ -172,11 +236,15 @@ class GTMEditor {
             console.log('🔄 Populating folder options...');
             this.populateFolderOptions();
             
-            console.log('🔄 Showing editor interface...');
-            this.showEditor();
+            console.log('🔄 Updating workflow to step 2...');
+            this.updateWorkflowStep(1, 'completed');
+            this.updateWorkflowStep(2, 'active');
             
-            console.log('🔄 Rendering current tab...');
-            this.renderCurrentTab();
+            // Show step 2 (property sync)
+            document.getElementById('step2').style.display = 'block';
+            
+            // Enable the main property input
+            this.onPropertyInputChangeMain();
             
             console.log('✅ GTM JSON import completed successfully!');
             
@@ -197,42 +265,115 @@ class GTMEditor {
             return;
         }
         
+        // Enhanced container name detection - check multiple possible locations
+        let containerName = 'Unnamed Container';
+        
+        // Check different possible locations for container name
+        if (cv.name) {
+            containerName = cv.name;
+            console.log('📋 Container name found in cv.name:', containerName);
+        } else if (cv.containerName) {
+            containerName = cv.containerName;
+            console.log('📋 Container name found in cv.containerName:', containerName);
+        } else if (this.gtmData.containerName) {
+            containerName = this.gtmData.containerName;
+            console.log('📋 Container name found in gtmData.containerName:', containerName);
+        } else if (cv.container && cv.container.name) {
+            containerName = cv.container.name;
+            console.log('📋 Container name found in cv.container.name:', containerName);
+        } else {
+            console.log('📋 No container name found in any expected location');
+            console.log('📋 Available cv properties:', Object.keys(cv));
+            console.log('📋 cv.name value:', cv.name);
+            console.log('📋 cv.name type:', typeof cv.name);
+        }
+        
         const accountId = cv.accountId || 'Unknown';
         const containerId = cv.containerId || 'Unknown';
-        const containerName = cv.name || 'Unnamed Container';
         const version = cv.containerVersionId || 'Unknown';
         const exportFormat = this.gtmData.exportFormatVersion || 'Unknown';
         
-        // Count items
+        // Count items using comprehensive counting logic
         const tagCount = cv.tag?.length || 0;
         const triggerCount = cv.trigger?.length || 0;
-        const variableCount = cv.variable?.length || 0;
         const folderCount = cv.folder?.length || 0;
+        
+        // Use the same comprehensive variable counting as renderVariables and getItemsByType
+        const customVariables = cv.variable || [];
+        const builtInVariables = cv.builtInVariable || [];
+        const altCustomVariables = cv.customVariable || [];
+        const enabledBuiltInVariables = cv.enabledBuiltInVariable || [];
+        const disabledBuiltInVariables = cv.disabledBuiltInVariable || [];
+        const workspaceBuiltInVariables = cv.workspaceBuiltInVariable || [];
+        
+        const allVariables = [
+            ...customVariables,
+            ...builtInVariables,
+            ...altCustomVariables,
+            ...enabledBuiltInVariables,
+            ...disabledBuiltInVariables,
+            ...workspaceBuiltInVariables
+        ];
+        
+        // Remove duplicates based on variableId
+        const uniqueVariableIds = new Set();
+        const uniqueVariables = allVariables.filter(variable => {
+            const id = variable.variableId || variable.builtInVariableId;
+            if (id && !uniqueVariableIds.has(id)) {
+                uniqueVariableIds.add(id);
+                return true;
+            } else if (!id) {
+                return true; // Include variables without IDs
+            }
+            return false;
+        });
+        
+        const variableCount = uniqueVariables.length;
+        console.log('📋 Container info variable count calculation:', variableCount);
+        
+        // Escape HTML to prevent display issues
+        const escapeHtml = (text) => {
+            if (!text) return 'Unknown';
+            return text.toString()
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        };
         
         containerInfo.innerHTML = `
             <div class="container-info-item">
-                <strong>📦 Container:</strong> ${containerName}
+                <strong>📦 Container:</strong>
+                <span class="info-value">${escapeHtml(containerName)}</span>
             </div>
             <div class="container-info-item">
-                <strong>🆔 Container ID:</strong> ${containerId}
+                <strong>🆔 ID:</strong>
+                <span class="info-value">${escapeHtml(containerId)}</span>
             </div>
             <div class="container-info-item">
-                <strong>📊 Version:</strong> ${version}
+                <strong>📊 Version:</strong>
+                <span class="info-value">${escapeHtml(version)}</span>
             </div>
             <div class="container-info-item">
-                <strong>🏷️ Tags:</strong> ${tagCount}
+                <strong>🏷️ Tags:</strong>
+                <span class="info-value">${tagCount}</span>
             </div>
             <div class="container-info-item">
-                <strong>⚡ Triggers:</strong> ${triggerCount}
+                <strong>⚡ Triggers:</strong>
+                <span class="info-value">${triggerCount}</span>
             </div>
             <div class="container-info-item">
-                <strong>🔢 Variables:</strong> ${variableCount}
+                <strong>🔢 Variables:</strong>
+                <span class="info-value">${variableCount}</span>
             </div>
             <div class="container-info-item">
-                <strong>📁 Folders:</strong> ${folderCount}
+                <strong>📁 Folders:</strong>
+                <span class="info-value">${folderCount}</span>
             </div>
         `;
         
+        console.log('📋 Final container name displayed:', containerName);
         console.log('📋 Container info displayed successfully');
     }
 
@@ -250,9 +391,6 @@ class GTMEditor {
         }
     }
 
-    showEditor() {
-        document.getElementById('editorSection').style.display = 'block';
-    }
 
     switchTab(tabName) {
         // Update tab buttons
@@ -413,14 +551,57 @@ class GTMEditor {
     renderVariables() {
         console.log('🔢 Starting to render variables...');
         const variablesList = document.getElementById('variablesList');
-        const variables = this.gtmData.containerVersion?.variable || [];
+        const cv = this.gtmData.containerVersion;
         
-        console.log('🔢 Raw variables data:', variables);
-        console.log('🔢 Found', variables.length, 'variables in container');
+        // Combine all variable types from all possible locations
+        const customVariables = cv?.variable || [];
+        const builtInVariables = cv?.builtInVariable || [];
+        const altCustomVariables = cv?.customVariable || [];
+        const enabledBuiltInVariables = cv?.enabledBuiltInVariable || [];
+        const disabledBuiltInVariables = cv?.disabledBuiltInVariable || [];
+        const workspaceBuiltInVariables = cv?.workspaceBuiltInVariable || [];
         
-        // Store original variables for filtering
-        this.originalItems = variables;
-        this.filteredItems = this.filterItemsBySearch(variables);
+        // Merge all variables into one array
+        const allVariables = [
+            ...customVariables.map(v => ({ ...v, variableType: 'custom' })),
+            ...builtInVariables.map(v => ({ ...v, variableType: 'built-in', variableId: v.builtInVariableId || v.variableId })),
+            ...altCustomVariables.map(v => ({ ...v, variableType: 'custom-alt' })),
+            ...enabledBuiltInVariables.map(v => ({ ...v, variableType: 'built-in-enabled', variableId: v.builtInVariableId || v.variableId })),
+            ...disabledBuiltInVariables.map(v => ({ ...v, variableType: 'built-in-disabled', variableId: v.builtInVariableId || v.variableId })),
+            ...workspaceBuiltInVariables.map(v => ({ ...v, variableType: 'built-in-workspace', variableId: v.builtInVariableId || v.variableId }))
+        ];
+        
+        console.log('🔢 Variable breakdown:');
+        console.log('  - Custom variables:', customVariables.length);
+        console.log('  - Built-in variables:', builtInVariables.length);
+        console.log('  - Alt custom variables:', altCustomVariables.length);
+        console.log('  - Enabled built-in variables:', enabledBuiltInVariables.length);
+        console.log('  - Disabled built-in variables:', disabledBuiltInVariables.length);
+        console.log('  - Workspace built-in variables:', workspaceBuiltInVariables.length);
+        console.log('  - TOTAL variables found:', allVariables.length);
+        
+        // Remove duplicates based on variableId
+        const uniqueVariables = [];
+        const seenIds = new Set();
+        
+        allVariables.forEach(variable => {
+            const id = variable.variableId || variable.builtInVariableId;
+            if (id && !seenIds.has(id)) {
+                seenIds.add(id);
+                uniqueVariables.push(variable);
+            } else if (!id) {
+                // If no ID, include it anyway but log a warning
+                console.warn('🔢 Variable without ID found:', variable);
+                uniqueVariables.push(variable);
+            }
+        });
+        
+        console.log('🔢 After deduplication:', uniqueVariables.length, 'unique variables');
+        console.log('🔢 All variables data sample (first 5):', uniqueVariables.slice(0, 5));
+        
+        // Store original variables for filtering (use the unique combined array)
+        this.originalItems = uniqueVariables;
+        this.filteredItems = this.filterItemsBySearch(uniqueVariables);
         
         console.log('🔢 After filtering:', this.filteredItems.length, 'variables to display');
         
@@ -432,20 +613,23 @@ class GTMEditor {
         
         const renderedHTML = this.filteredItems.map((variable, filteredIndex) => {
             // Find the original index in the full variables array
-            const originalIndex = variables.findIndex(v => v.variableId === variable.variableId);
+            const originalIndex = uniqueVariables.findIndex(v => v.variableId === variable.variableId);
             console.log(`🔢 Rendering variable ${filteredIndex + 1}:`, {
                 name: variable.name,
                 type: variable.type,
+                variableType: variable.variableType,
                 variableId: variable.variableId,
                 originalIndex: originalIndex
             });
+            
+            const variableTypeDisplay = variable.variableType?.includes('built-in') ? 'Built-in' : 'Custom';
             
             return `
                 <div class="item-card" data-type="variable" data-index="${originalIndex}" data-id="${variable.variableId}">
                     <div class="item-header">
                         <input type="checkbox" class="item-checkbox" data-id="${variable.variableId}">
                         <div class="item-name" onclick="gtmEditor.editItem('variable', ${originalIndex})">${variable.name || 'Unnamed Variable'}</div>
-                        <div class="item-status enabled">Active</div>
+                        <div class="item-status ${variable.variableType === 'built-in' ? 'built-in' : 'enabled'}">${variableTypeDisplay}</div>
                         <div class="item-actions">
                             <button class="btn-small" onclick="gtmEditor.editItem('variable', ${originalIndex})">Edit</button>
                         </div>
@@ -453,6 +637,7 @@ class GTMEditor {
                     <div class="item-details">
                         <span class="item-type">${variable.type || 'Unknown Type'}</span>
                         ${variable.parentFolderId ? ` | Folder: ${this.getFolderName(variable.parentFolderId)}` : ''}
+                        ${variable.variableType === 'built-in' ? ' | Built-in Variable' : ''}
                     </div>
                 </div>
             `;
@@ -492,7 +677,17 @@ class GTMEditor {
         const settingsForm = document.getElementById('settingsForm');
         const containerVersion = this.gtmData.containerVersion || {};
         
-        settingsForm.innerHTML = `
+        // Check if container settings section already exists
+        let containerSettingsSection = settingsForm.querySelector('.container-settings-section');
+        if (!containerSettingsSection) {
+            // Create container settings section
+            containerSettingsSection = document.createElement('div');
+            containerSettingsSection.className = 'container-settings-section';
+            settingsForm.appendChild(containerSettingsSection);
+        }
+        
+        containerSettingsSection.innerHTML = `
+            <h3>📋 Container Settings</h3>
             <div class="form-group">
                 <label>Container Name:</label>
                 <input type="text" id="containerName" value="${containerVersion.name || ''}" onchange="gtmEditor.updateContainerSetting('name', this.value)">
@@ -669,6 +864,67 @@ class GTMEditor {
             `;
         }
         
+        // Enhanced parameter editing based on type
+        if (item.parameter && item.parameter.length > 0) {
+            formHTML += `<div class="parameters-section">
+                <h4>Configuration Parameters</h4>
+                <div id="parametersContainer">`;
+            
+            item.parameter.forEach((param, index) => {
+                const paramKey = param.key || param.type || `param_${index}`;
+                const paramValue = param.value || '';
+                const paramType = param.type || 'text';
+                
+                // Special handling for different parameter types
+                if (paramKey === 'html' || paramType === 'template') {
+                    // Custom HTML or template content
+                    formHTML += `
+                        <div class="form-group parameter-group" data-param-index="${index}">
+                            <label>${escapeHtml(paramKey)}:</label>
+                            <textarea class="parameter-input html-editor" data-key="${escapeHtml(paramKey)}" rows="8">${escapeHtml(paramValue)}</textarea>
+                        </div>
+                    `;
+                } else if (paramKey.toLowerCase().includes('id') || paramKey.toLowerCase().includes('label')) {
+                    // ID or label fields
+                    formHTML += `
+                        <div class="form-group parameter-group" data-param-index="${index}">
+                            <label>${escapeHtml(paramKey)}:</label>
+                            <input type="text" class="parameter-input" data-key="${escapeHtml(paramKey)}" value="${escapeHtml(paramValue)}">
+                        </div>
+                    `;
+                } else if (paramKey.toLowerCase().includes('url') || paramKey.toLowerCase().includes('src')) {
+                    // URL fields
+                    formHTML += `
+                        <div class="form-group parameter-group" data-param-index="${index}">
+                            <label>${escapeHtml(paramKey)}:</label>
+                            <input type="url" class="parameter-input" data-key="${escapeHtml(paramKey)}" value="${escapeHtml(paramValue)}">
+                        </div>
+                    `;
+                } else if (paramType === 'boolean' || paramValue === 'true' || paramValue === 'false') {
+                    // Boolean fields
+                    formHTML += `
+                        <div class="form-group parameter-group" data-param-index="${index}">
+                            <label>
+                                <input type="checkbox" class="parameter-input" data-key="${escapeHtml(paramKey)}" ${paramValue === 'true' ? 'checked' : ''}>
+                                ${escapeHtml(paramKey)}
+                            </label>
+                        </div>
+                    `;
+                } else {
+                    // Default text input
+                    formHTML += `
+                        <div class="form-group parameter-group" data-param-index="${index}">
+                            <label>${escapeHtml(paramKey)}:</label>
+                            <input type="text" class="parameter-input" data-key="${escapeHtml(paramKey)}" value="${escapeHtml(paramValue)}">
+                        </div>
+                    `;
+                }
+            });
+            
+            formHTML += `</div></div>`;
+        }
+        
+        // Tag-specific fields
         if (type === 'tag') {
             formHTML += `
                 <div class="form-group">
@@ -695,6 +951,17 @@ class GTMEditor {
             }
         }
         
+        // Variable-specific fields
+        if (type === 'variable' && item.variableType === 'built-in') {
+            formHTML += `
+                <div class="form-group">
+                    <div class="info-message">
+                        <strong>Note:</strong> This is a built-in GTM variable. Some properties may not be editable.
+                    </div>
+                </div>
+            `;
+        }
+        
         formHTML += `
             <div class="form-group">
                 <label>Folder:</label>
@@ -715,31 +982,19 @@ class GTMEditor {
             </div>
         `;
         
-        // Show additional metadata in read-only format
-        if (item.parameter && item.parameter.length > 0) {
-            formHTML += `
-                <div class="form-group">
-                    <label>Parameters (${item.parameter.length}):</label>
-                    <div class="parameter-preview">
-                        ${item.parameter.slice(0, 3).map(param => 
-                            `<div class="param-item"><strong>${escapeHtml(param.key || param.type)}:</strong> ${escapeHtml(param.value || param.name || 'N/A')}</div>`
-                        ).join('')}
-                        ${item.parameter.length > 3 ? `<div class="param-more">... and ${item.parameter.length - 3} more</div>` : ''}
-                    </div>
-                </div>
-            `;
-        }
-        
-        console.log('📝 Edit form HTML generated');
+        console.log('📝 Enhanced edit form HTML generated with parameter editing');
         return formHTML;
     }
 
     saveItemChanges() {
         if (!this.currentEditItem) return;
         
+        console.log('💾 Saving item changes...');
         const { type, index } = this.currentEditItem;
         const items = this.getItemsByType(type);
         const item = items[index];
+        
+        console.log('💾 Original item:', item);
         
         // Update basic fields
         item.name = document.getElementById('editName').value;
@@ -756,10 +1011,36 @@ class GTMEditor {
             item.notes = notesField.value;
         }
         
+        // Update parameters if they exist
+        if (item.parameter && item.parameter.length > 0) {
+            console.log('💾 Updating parameters...');
+            const parameterInputs = document.querySelectorAll('.parameter-input');
+            
+            parameterInputs.forEach(input => {
+                const paramKey = input.dataset.key;
+                const paramIndex = parseInt(input.closest('.parameter-group').dataset.paramIndex);
+                
+                if (item.parameter[paramIndex] && item.parameter[paramIndex].key === paramKey) {
+                    if (input.type === 'checkbox') {
+                        item.parameter[paramIndex].value = input.checked ? 'true' : 'false';
+                    } else {
+                        item.parameter[paramIndex].value = input.value;
+                    }
+                    console.log(`💾 Updated parameter ${paramKey}:`, item.parameter[paramIndex].value);
+                }
+            });
+        }
+        
         // Type-specific updates
         if (type === 'tag') {
-            item.paused = document.getElementById('editPaused').checked;
+            const pausedCheckbox = document.getElementById('editPaused');
+            if (pausedCheckbox) {
+                item.paused = pausedCheckbox.checked;
+            }
         }
+        
+        console.log('💾 Updated item:', item);
+        console.log('💾 Item changes saved successfully');
         
         this.closeModals();
         this.renderCurrentTab();
@@ -861,7 +1142,38 @@ class GTMEditor {
                 return containerVersion?.trigger || [];
             case 'variables':
             case 'variable':
-                return containerVersion?.variable || [];
+                // Return combined variables array (same logic as renderVariables)
+                const customVariables = containerVersion?.variable || [];
+                const builtInVariables = containerVersion?.builtInVariable || [];
+                const altCustomVariables = containerVersion?.customVariable || [];
+                const enabledBuiltInVariables = containerVersion?.enabledBuiltInVariable || [];
+                const disabledBuiltInVariables = containerVersion?.disabledBuiltInVariable || [];
+                const workspaceBuiltInVariables = containerVersion?.workspaceBuiltInVariable || [];
+                
+                const allVariables = [
+                    ...customVariables.map(v => ({ ...v, variableType: 'custom' })),
+                    ...builtInVariables.map(v => ({ ...v, variableType: 'built-in', variableId: v.builtInVariableId || v.variableId })),
+                    ...altCustomVariables.map(v => ({ ...v, variableType: 'custom-alt' })),
+                    ...enabledBuiltInVariables.map(v => ({ ...v, variableType: 'built-in-enabled', variableId: v.builtInVariableId || v.variableId })),
+                    ...disabledBuiltInVariables.map(v => ({ ...v, variableType: 'built-in-disabled', variableId: v.builtInVariableId || v.variableId })),
+                    ...workspaceBuiltInVariables.map(v => ({ ...v, variableType: 'built-in-workspace', variableId: v.builtInVariableId || v.variableId }))
+                ];
+                
+                // Remove duplicates
+                const uniqueVariables = [];
+                const seenIds = new Set();
+                
+                allVariables.forEach(variable => {
+                    const id = variable.variableId || variable.builtInVariableId;
+                    if (id && !seenIds.has(id)) {
+                        seenIds.add(id);
+                        uniqueVariables.push(variable);
+                    } else if (!id) {
+                        uniqueVariables.push(variable);
+                    }
+                });
+                
+                return uniqueVariables;
             case 'folders':
             case 'folder':
                 return containerVersion?.folder || [];
@@ -912,6 +1224,835 @@ class GTMEditor {
         link.click();
         
         URL.revokeObjectURL(link.href);
+    }
+
+    // Google Sheets Integration Methods
+    getAllVariables() {
+        const cv = this.gtmData.containerVersion;
+        
+        // Combine all variable types from all possible locations (same as renderVariables)
+        const customVariables = cv?.variable || [];
+        const builtInVariables = cv?.builtInVariable || [];
+        const altCustomVariables = cv?.customVariable || [];
+        const enabledBuiltInVariables = cv?.enabledBuiltInVariable || [];
+        const disabledBuiltInVariables = cv?.disabledBuiltInVariable || [];
+        const workspaceBuiltInVariables = cv?.workspaceBuiltInVariable || [];
+        
+        // Merge all variables into one array with type labels
+        const allVariables = [
+            ...customVariables.map(v => ({ ...v, variableType: 'custom' })),
+            ...builtInVariables.map(v => ({ ...v, variableType: 'built-in', variableId: v.builtInVariableId || v.variableId })),
+            ...altCustomVariables.map(v => ({ ...v, variableType: 'custom-alt' })),
+            ...enabledBuiltInVariables.map(v => ({ ...v, variableType: 'built-in-enabled', variableId: v.builtInVariableId || v.variableId })),
+            ...disabledBuiltInVariables.map(v => ({ ...v, variableType: 'built-in-disabled', variableId: v.builtInVariableId || v.variableId })),
+            ...workspaceBuiltInVariables.map(v => ({ ...v, variableType: 'built-in-workspace', variableId: v.builtInVariableId || v.variableId }))
+        ];
+        
+        // Remove duplicates based on variable ID
+        const uniqueVariables = [];
+        const seenIds = new Set();
+        
+        allVariables.forEach(variable => {
+            const id = variable.variableId || variable.builtInVariableId;
+            if (id && !seenIds.has(id)) {
+                seenIds.add(id);
+                uniqueVariables.push(variable);
+            } else if (!id) {
+                uniqueVariables.push(variable);
+            }
+        });
+        
+        console.log('🔢 getAllVariables() found:', uniqueVariables.length, 'unique variables');
+        return uniqueVariables;
+    }
+
+    onPropertyNameChange() {
+        const propertyName = document.getElementById('propertyNameInput').value.trim();
+        const syncBtn = document.getElementById('syncFromSheetBtn');
+        syncBtn.disabled = !propertyName || !this.gtmData;
+    }
+
+    async syncFromSheet() {
+        const propertyName = document.getElementById('propertyNameInput').value.trim();
+        
+        if (!propertyName) {
+            this.showSyncStatus('Please enter a property name', 'error');
+            return;
+        }
+
+        if (!this.API_KEY) {
+            this.promptForApiKey();
+            return;
+        }
+
+        console.log('🔄 Starting Google Sheets sync for property:', propertyName);
+        
+        try {
+            this.showSyncStatus('Loading sheet data...', 'loading');
+            
+            // Fetch sheet data
+            const sheetData = await this.fetchSheetData();
+            console.log('📋 Sheet data loaded:', sheetData);
+            
+            // Find property row
+            const propertyRow = this.findPropertyRow(sheetData, propertyName);
+            if (!propertyRow) {
+                this.showSyncStatus(`Property "${propertyName}" not found in sheet`, 'error');
+                return;
+            }
+            
+            console.log('✅ Found property row:', propertyRow);
+            
+            // Find matching GTM variables and tags
+            const changes = this.findGTMMatches(propertyRow);
+            console.log('🔍 Found GTM matches:', changes);
+            
+            if (changes.length === 0) {
+                this.showSyncStatus('No matching GTM variables found', 'error');
+                return;
+            }
+            
+            // Show preview
+            this.showPreview(changes);
+            this.showSyncStatus(`Found ${changes.length} variables to update`, 'success');
+            
+        } catch (error) {
+            console.error('❌ Sync error:', error);
+            this.showSyncStatus('Error loading sheet data', 'error');
+        }
+    }
+
+    async fetchSheetData() {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.SHEET_ID}/values/Tracker%20Sheet!A:AZ?key=${this.API_KEY}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        return data.values || [];
+    }
+
+    findPropertyRow(sheetData, propertyName) {
+        console.log('🔍 Searching for property:', propertyName);
+        
+        if (sheetData.length < 2) return null;
+        
+        const headers = sheetData[0];
+        const propertyColIndex = headers.findIndex(header => 
+            header.toLowerCase().includes('property')
+        );
+        
+        if (propertyColIndex === -1) {
+            console.log('❌ Property column not found in headers:', headers);
+            return null;
+        }
+        
+        for (let i = 1; i < sheetData.length; i++) {
+            const row = sheetData[i];
+            if (row[propertyColIndex] && 
+                row[propertyColIndex].toLowerCase().includes(propertyName.toLowerCase())) {
+                
+                // Map row data to column names
+                const rowData = {};
+                headers.forEach((header, index) => {
+                    rowData[header] = row[index] || '';
+                });
+                
+                console.log('✅ Found matching row:', rowData);
+                return rowData;
+            }
+        }
+        
+        return null;
+    }
+
+    findPropertyRowByInput(sheetData, propertyInput) {
+        console.log('🔍 Searching for property by', propertyInput.type + ':', propertyInput.value);
+        
+        if (sheetData.length < 2) return null;
+        
+        const headers = sheetData[0];
+        let searchColumnIndex = -1;
+        
+        if (propertyInput.type === 'name') {
+            // Look for property name column
+            searchColumnIndex = headers.findIndex(header => 
+                header.toLowerCase().includes('property')
+            );
+        } else if (propertyInput.type === 'url') {
+            // Look for website URL column
+            searchColumnIndex = headers.findIndex(header => 
+                header.toLowerCase().includes('website') || 
+                header.toLowerCase().includes('url')
+            );
+        }
+        
+        if (searchColumnIndex === -1) {
+            console.log(`❌ ${propertyInput.type === 'name' ? 'Property' : 'Website URL'} column not found in headers:`, headers);
+            return null;
+        }
+        
+        console.log(`🔍 Searching in column ${searchColumnIndex}: ${headers[searchColumnIndex]}`);
+        
+        for (let i = 1; i < sheetData.length; i++) {
+            const row = sheetData[i];
+            const cellValue = row[searchColumnIndex];
+            
+            if (!cellValue) continue;
+            
+            let isMatch = false;
+            
+            if (propertyInput.type === 'name') {
+                // For property name, use partial matching (case insensitive)
+                isMatch = cellValue.toLowerCase().includes(propertyInput.value.toLowerCase());
+            } else if (propertyInput.type === 'url') {
+                // For URL, clean both URLs and compare
+                const cleanInputUrl = this.cleanUrl(propertyInput.value);
+                const cleanCellUrl = this.cleanUrl(cellValue);
+                isMatch = cleanCellUrl.includes(cleanInputUrl) || cleanInputUrl.includes(cleanCellUrl);
+            }
+            
+            if (isMatch) {
+                // Map row data to column names
+                const rowData = {};
+                headers.forEach((header, index) => {
+                    rowData[header] = row[index] || '';
+                });
+                
+                console.log('✅ Found matching row:', rowData);
+                return rowData;
+            }
+        }
+        
+        return null;
+    }
+
+    cleanUrl(url) {
+        if (!url) return '';
+        
+        // Remove protocol, www, trailing slashes, and convert to lowercase
+        return url
+            .toLowerCase()
+            .replace(/^https?:\/\//, '')
+            .replace(/^www\./, '')
+            .replace(/\/$/, '');
+    }
+
+    findGTMMatches(propertyRow) {
+        const changes = [];
+        
+        // Get all variables (merge all variable arrays)
+        const allVariables = this.getAllVariables();
+        
+        console.log('🔍 ===== ENHANCED VARIABLE DEBUGGING =====');
+        console.log('🔍 Total variables found:', allVariables.length);
+        console.log('🔍 Available sheet columns:', Object.keys(propertyRow));
+        
+        // Debug: Show ALL variables with detailed info
+        console.log('🔍 ALL GTM VARIABLES:');
+        allVariables.forEach((variable, index) => {
+            console.log(`  ${index + 1}: "${variable.name}" (type: ${variable.type}, variableType: ${variable.variableType})`);
+            if (variable.parameter && variable.parameter.length > 0) {
+                variable.parameter.forEach(param => {
+                    console.log(`    Parameter: ${param.key} = "${param.value}"`);
+                });
+            }
+        });
+        
+        // Find GA4 Measurement ID variable
+        console.log('🔍 Searching for GA4 Measurement ID variable...');
+        const ga4Patterns = ['ga4', 'measurement', 'tracking', 'google analytics'];
+        const ga4Variable = this.findVariableByPattern(allVariables, ga4Patterns);
+        console.log('🔍 GA4 variable search result:', ga4Variable ? ga4Variable.name : 'NOT FOUND');
+        console.log('🔍 Sheet GA4 value:', propertyRow['GA4 Measurement ID']);
+        
+        if (ga4Variable && propertyRow['GA4 Measurement ID']) {
+            console.log('✅ Adding GA4 Measurement ID change');
+            changes.push({
+                type: 'variable',
+                item: ga4Variable,
+                field: 'defaultValue',
+                oldValue: ga4Variable.parameter?.find(p => p.key === 'defaultValue')?.value || '',
+                newValue: propertyRow['GA4 Measurement ID'],
+                description: `GA4 Measurement ID Variable: ${ga4Variable.name}`
+            });
+        }
+        
+        // Find Conversion ID variable (using Conversion ID column K)
+        console.log('🔍 Searching for Conversion ID variable...');
+        const conversionIdPatterns = ['conversion', 'conv', 'ads', 'google ads', 'account'];
+        const conversionIdVariable = this.findVariableByPattern(allVariables, conversionIdPatterns);
+        console.log('🔍 Conversion ID variable search result:', conversionIdVariable ? conversionIdVariable.name : 'NOT FOUND');
+        console.log('🔍 Sheet Conversion ID value:', propertyRow['Conversion ID']);
+        
+        if (conversionIdVariable && propertyRow['Conversion ID']) {
+            console.log('✅ Adding Conversion ID change');
+            changes.push({
+                type: 'variable',
+                item: conversionIdVariable,
+                field: 'defaultValue',
+                oldValue: conversionIdVariable.parameter?.find(p => p.key === 'defaultValue')?.value || '',
+                newValue: propertyRow['Conversion ID'],
+                description: `Conversion ID Variable: ${conversionIdVariable.name}`
+            });
+        }
+        
+        // Debug: Show all variables that might be label variables
+        console.log('🔍 All variables for label matching:');
+        allVariables.forEach((variable, index) => {
+            const name = variable.name.toLowerCase();
+            if (name.includes('label') || name.includes('conversion')) {
+                console.log(`  ${index}: "${variable.name}"`);
+            }
+        });
+
+        // Debug: Show all column names from the sheet
+        console.log('🔍 All column names in property row:');
+        Object.keys(propertyRow).forEach(columnName => {
+            console.log(`  "${columnName}": "${propertyRow[columnName]}"`);
+        });
+
+        // Find GAds Conversion Label variables (only GAds, no TTD updates)
+        // Simplified patterns for standardized GTM variable names
+        const labelMappings = [
+            { 
+                gadsPattern: ['gads', 'conversion', 'label', 'apply', 'start'], 
+                column: 'Gads Conversion Label\nApply Now Start'
+            },
+            { 
+                gadsPattern: ['gads', 'conversion', 'label', 'apply', 'end'], 
+                column: 'Gads Conversion Label\nApply Now End'
+            },
+            { 
+                gadsPattern: ['gads', 'conversion', 'label', 'contact', 'start'], 
+                column: 'Gads Conversion Label\nContact Submit Start'
+            },
+            { 
+                gadsPattern: ['gads', 'conversion', 'label', 'contact', 'end'], 
+                column: 'Gads Conversion Label\nContact Submit End'
+            },
+            { 
+                gadsPattern: ['gads', 'conversion', 'label', 'tour', 'start'], 
+                column: 'Gads Conversion Label\nSchedule Tour Start'
+            },
+            { 
+                gadsPattern: ['gads', 'conversion', 'label', 'tour', 'end'], 
+                column: 'Gads Conversion Label\nSchedule Tour End'
+            },
+            { 
+                gadsPattern: ['gads', 'conversion', 'label', 'virtual', 'tour'], 
+                column: 'Gads Conversion Label\nVirtual Tour'
+            }
+        ];
+        
+        labelMappings.forEach((mapping, index) => {
+            console.log(`🔍 Trying GAds label mapping ${index + 1}:`);
+            console.log(`  GAds pattern: [${mapping.gadsPattern.join(', ')}]`);
+            console.log(`  Column: ${mapping.column}`);
+            console.log(`  Column value: "${propertyRow[mapping.column]}"`);
+
+            // Debug: Show which variables contain any of the pattern words
+            console.log(`  🔍 Variables containing pattern words:`);
+            allVariables.forEach(variable => {
+                const name = variable.name.toLowerCase();
+                const matchedWords = mapping.gadsPattern.filter(pattern => name.includes(pattern.toLowerCase()));
+                if (matchedWords.length > 0) {
+                    console.log(`    "${variable.name}" - matches: [${matchedWords.join(', ')}]`);
+                }
+            });
+
+            // Look for GAds label variables only
+            const gadsLabelVariable = this.findVariableBySpecificPattern(allVariables, mapping.gadsPattern);
+            console.log(`  GAds match result:`, gadsLabelVariable ? gadsLabelVariable.name : 'NO MATCH');
+            
+            if (gadsLabelVariable && propertyRow[mapping.column]) {
+                console.log('✅ Found GAds label variable:', gadsLabelVariable.name, 'for column:', mapping.column);
+                changes.push({
+                    type: 'variable',
+                    item: gadsLabelVariable,
+                    field: 'defaultValue',
+                    oldValue: gadsLabelVariable.parameter?.find(p => p.key === 'defaultValue')?.value || '',
+                    newValue: propertyRow[mapping.column],
+                    description: `GAds Label Variable: ${gadsLabelVariable.name}`
+                });
+            }
+        });
+        
+        // Find TTD Conversion Label variables (columns AO-AY)
+        const ttdLabelMappings = [
+            { 
+                ttdPattern: ['ttd', 'ct', 'apply', 'start'],
+                column: 'TTD - Apply Start CT'
+            },
+            { 
+                ttdPattern: ['ttd', 'ct', 'apply', 'end'],
+                column: 'TTD - Apply End CT'
+            },
+            { 
+                ttdPattern: ['ttd', 'ct', 'contact', 'start'],
+                column: 'TTD - Contact Start CT'
+            },
+            { 
+                ttdPattern: ['ttd', 'ct', 'contact', 'end'],
+                column: 'TTD - Contact End CT'
+            },
+            { 
+                ttdPattern: ['ttd', 'ct', 'schedule', 'tour', 'start'],
+                column: 'TTD - Schedule a Tour Start CT'
+            },
+            { 
+                ttdPattern: ['ttd', 'ct', 'schedule', 'tour', 'end'],
+                column: 'TTD - Schedule a Tour End CT'
+            },
+            { 
+                ttdPattern: ['ttd', 'ct', 'virtual', 'tour'],
+                column: 'TTD - Virtual Tour CT'
+            }
+        ];
+        
+        ttdLabelMappings.forEach((mapping, index) => {
+            console.log(`🔍 Trying TTD label mapping ${index + 1}:`);
+            console.log(`  TTD pattern: [${mapping.ttdPattern.join(', ')}]`);
+            console.log(`  Column: ${mapping.column}`);
+            console.log(`  Column value: "${propertyRow[mapping.column]}"`);
+
+            // Look for TTD label variables
+            const ttdLabelVariable = this.findVariableBySpecificPattern(allVariables, mapping.ttdPattern);
+            console.log(`  TTD match result:`, ttdLabelVariable ? ttdLabelVariable.name : 'NO MATCH');
+            
+            if (ttdLabelVariable && propertyRow[mapping.column]) {
+                console.log('✅ Found TTD label variable:', ttdLabelVariable.name, 'for column:', mapping.column);
+                changes.push({
+                    type: 'variable',
+                    item: ttdLabelVariable,
+                    field: 'defaultValue',
+                    oldValue: ttdLabelVariable.parameter?.find(p => p.key === 'defaultValue')?.value || '',
+                    newValue: propertyRow[mapping.column],
+                    description: `TTD Label Variable: ${ttdLabelVariable.name}`
+                });
+            }
+        });
+        
+        // Find CallRail Custom HTML tag
+        const callrailTag = this.findCallRailTag();
+        if (callrailTag && propertyRow['CallRail Tag']) {
+            const htmlParam = callrailTag.parameter?.find(p => 
+                p.key === 'html' || p.key === 'customHtml'
+            );
+            
+            if (htmlParam) {
+                changes.push({
+                    type: 'tag',
+                    item: callrailTag,
+                    field: 'html',
+                    oldValue: htmlParam.value || '',
+                    newValue: propertyRow['CallRail Tag'],
+                    description: `CallRail HTML Tag: ${callrailTag.name}`
+                });
+            }
+        }
+        
+        // Final summary
+        console.log('🎯 ===== FINAL MATCHING SUMMARY =====');
+        console.log('🎯 Total changes found:', changes.length);
+        changes.forEach((change, index) => {
+            console.log(`  ${index + 1}. ${change.description}: "${change.oldValue}" → "${change.newValue}"`);
+        });
+        console.log('🎯 Expected 10 variables: GA4 ID, Conversion ID, 4 GAds Labels, CallRail, 3 TTD (if data exists)');
+        
+        this.pendingChanges = changes;
+        return changes;
+    }
+
+    findVariableByPattern(variables, patterns) {
+        console.log(`🔍 Pattern search with [${patterns.join(', ')}]:`);
+        
+        const matches = variables.filter(variable => {
+            const name = variable.name.toLowerCase();
+            const hasMatch = patterns.some(pattern => name.includes(pattern.toLowerCase()));
+            if (hasMatch) {
+                console.log(`  ✅ Match: "${variable.name}"`);
+            }
+            return hasMatch;
+        });
+        
+        console.log(`🔍 Found ${matches.length} matches`);
+        return matches[0]; // Return first match
+    }
+
+    findVariableBySpecificPattern(variables, patterns) {
+        console.log(`🔍 Specific pattern search (ALL required) with [${patterns.join(', ')}]:`);
+        
+        const matches = variables.filter(variable => {
+            const name = variable.name.toLowerCase();
+            // ALL patterns must be present in the variable name
+            const hasAllPatterns = patterns.every(pattern => name.includes(pattern.toLowerCase()));
+            if (hasAllPatterns) {
+                console.log(`  ✅ Match: "${variable.name}"`);
+            } else {
+                // Show which patterns matched and which didn't
+                const matchedPatterns = patterns.filter(pattern => name.includes(pattern.toLowerCase()));
+                if (matchedPatterns.length > 0) {
+                    console.log(`  ⚠️ Partial match: "${variable.name}" (has: [${matchedPatterns.join(', ')}], missing: [${patterns.filter(p => !matchedPatterns.includes(p)).join(', ')}])`);
+                }
+            }
+            return hasAllPatterns;
+        });
+        
+        console.log(`🔍 Found ${matches.length} specific pattern matches`);
+        return matches[0]; // Return first match
+    }
+
+    findCallRailTag() {
+        const tags = this.gtmData.containerVersion.tag || [];
+        return tags.find(tag => {
+            if (tag.type !== 'html') return false;
+            
+            const htmlParam = tag.parameter?.find(p => 
+                p.key === 'html' || p.key === 'customHtml'
+            );
+            
+            if (!htmlParam) return false;
+            
+            const html = htmlParam.value.toLowerCase();
+            return html.includes('callrail') || html.includes('cdn.callrail.com');
+        });
+    }
+
+    showPreview(changes) {
+        const previewEl = document.getElementById('syncPreview');
+        const contentEl = document.getElementById('previewContent');
+        
+        contentEl.innerHTML = changes.map(change => `
+            <div class="preview-item">
+                <div class="preview-item-name">${this.escapeHtml(change.description)}</div>
+                <div class="preview-item-change">
+                    <span class="old-value">${this.escapeHtml(change.oldValue)}</span>
+                    <span style="margin: 0 8px;">→</span>
+                    <span class="new-value">${this.escapeHtml(change.newValue)}</span>
+                </div>
+            </div>
+        `).join('');
+        
+        previewEl.style.display = 'block';
+    }
+
+    applySheetChanges() {
+        if (!this.pendingChanges) return;
+        
+        console.log('💾 Applying sheet changes:', this.pendingChanges);
+        
+        this.pendingChanges.forEach((change, index) => {
+            console.log(`💾 Processing change ${index + 1}:`, change);
+            console.log(`💾 Variable structure:`, {
+                name: change.item.name,
+                type: change.item.type,
+                parameter: change.item.parameter,
+                defaultValue: change.item.defaultValue
+            });
+            
+            if (change.type === 'variable') {
+                // Try different ways to update the variable value
+                
+                // Method 1: Look for defaultValue parameter
+                const defaultValueParam = change.item.parameter?.find(p => p.key === 'defaultValue');
+                if (defaultValueParam) {
+                    console.log('💾 Found defaultValue parameter, updating...');
+                    defaultValueParam.value = change.newValue;
+                    console.log('💾 Updated defaultValue parameter to:', defaultValueParam.value);
+                }
+                
+                // Method 2: Look for value parameter
+                const valueParam = change.item.parameter?.find(p => p.key === 'value');
+                if (valueParam) {
+                    console.log('💾 Found value parameter, updating...');
+                    valueParam.value = change.newValue;
+                    console.log('💾 Updated value parameter to:', valueParam.value);
+                }
+                
+                // Method 3: Check if variable has direct defaultValue property
+                if (change.item.hasOwnProperty('defaultValue')) {
+                    console.log('💾 Found direct defaultValue property, updating...');
+                    change.item.defaultValue = change.newValue;
+                    console.log('💾 Updated defaultValue property to:', change.item.defaultValue);
+                }
+                
+                // Method 4: If no existing parameters, create defaultValue parameter
+                if (!defaultValueParam && !valueParam && !change.item.hasOwnProperty('defaultValue')) {
+                    console.log('💾 No existing value found, creating defaultValue parameter...');
+                    if (!change.item.parameter) change.item.parameter = [];
+                    change.item.parameter.push({
+                        key: 'defaultValue',
+                        type: 'template',
+                        value: change.newValue
+                    });
+                    console.log('💾 Created new defaultValue parameter');
+                }
+                
+            } else if (change.type === 'tag') {
+                // Update tag HTML parameter
+                const param = change.item.parameter?.find(p => 
+                    p.key === 'html' || p.key === 'customHtml'
+                );
+                if (param) {
+                    console.log('💾 Updating HTML parameter...');
+                    param.value = change.newValue;
+                    console.log('💾 Updated HTML parameter');
+                }
+            }
+        });
+        
+        console.log('💾 All changes applied, refreshing view...');
+        
+        // Refresh the current view
+        this.renderCurrentTab();
+        
+        // Hide preview and show success
+        document.getElementById('syncPreview').style.display = 'none';
+        this.showSyncStatus('✅ Changes applied successfully!', 'success');
+        
+        this.pendingChanges = null;
+    }
+
+    cancelSheetChanges() {
+        document.getElementById('syncPreview').style.display = 'none';
+        this.pendingChanges = null;
+        this.showSyncStatus('Changes cancelled', 'error');
+    }
+
+    showSyncStatus(message, type) {
+        const statusEl = document.getElementById('syncStatus');
+        statusEl.textContent = message;
+        statusEl.className = `sync-status ${type}`;
+    }
+
+    promptForApiKey() {
+        const apiKey = prompt('Please enter your Google Sheets API key:');
+        if (apiKey) {
+            this.API_KEY = apiKey;
+            this.syncFromSheet();
+        }
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML;
+    }
+
+    // Workflow Management Methods
+    updateWorkflowStep(stepNumber, state) {
+        const stepEl = document.getElementById(`step${stepNumber}`);
+        if (!stepEl) return;
+
+        // Remove existing state classes
+        stepEl.classList.remove('active', 'completed');
+        
+        // Add new state class
+        if (state === 'active' || state === 'completed') {
+            stepEl.classList.add(state);
+        }
+
+        console.log(`🔄 Updated step ${stepNumber} to ${state}`);
+    }
+
+    switchInputTab(event) {
+        const tabName = event.target.dataset.tab;
+        
+        // Update tab buttons
+        document.querySelectorAll('.input-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Update input sections
+        document.querySelectorAll('.input-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById(`${tabName}Input`).classList.add('active');
+        
+        // Update sync button state
+        this.onPropertyInputChangeMain();
+        
+        console.log(`🔄 Switched to ${tabName} input tab`);
+    }
+
+    onPropertyInputChangeMain() {
+        const propertyName = document.getElementById('propertyNameInputMain').value.trim();
+        const propertyUrl = document.getElementById('propertyUrlInputMain').value.trim();
+        const syncBtn = document.getElementById('syncFromSheetBtnMain');
+        
+        // Enable sync button if either input has value and GTM data is loaded
+        const hasInput = propertyName || propertyUrl;
+        syncBtn.disabled = !hasInput || !this.gtmData;
+    }
+
+    getCurrentPropertyInput() {
+        const activeTab = document.querySelector('.input-tab.active').dataset.tab;
+        
+        if (activeTab === 'name') {
+            return {
+                type: 'name',
+                value: document.getElementById('propertyNameInputMain').value.trim()
+            };
+        } else {
+            return {
+                type: 'url',
+                value: document.getElementById('propertyUrlInputMain').value.trim()
+            };
+        }
+    }
+
+    async syncFromSheetMain() {
+        const propertyInput = this.getCurrentPropertyInput();
+        
+        if (!propertyInput.value) {
+            this.showSyncStatusMain(`Please enter a property ${propertyInput.type}`, 'error');
+            return;
+        }
+
+        if (!this.API_KEY) {
+            this.promptForApiKey();
+            return;
+        }
+
+        console.log('🔄 Starting main workflow Google Sheets sync for property:', propertyInput);
+        
+        try {
+            this.showSyncStatusMain('Loading sheet data...', 'loading');
+            
+            // Fetch sheet data
+            const sheetData = await this.fetchSheetData();
+            console.log('📋 Sheet data loaded:', sheetData);
+            
+            // Find property row
+            const propertyRow = this.findPropertyRowByInput(sheetData, propertyInput);
+            if (!propertyRow) {
+                this.showSyncStatusMain(`Property "${propertyInput.value}" not found in sheet`, 'error');
+                return;
+            }
+            
+            console.log('✅ Found property row:', propertyRow);
+            
+            // Find matching GTM variables and tags
+            const changes = this.findGTMMatches(propertyRow);
+            console.log('🔍 Found GTM matches:', changes);
+            
+            if (changes.length === 0) {
+                this.showSyncStatusMain('No matching GTM variables found', 'error');
+                return;
+            }
+            
+            // Show preview
+            this.showPreviewMain(changes);
+            this.showSyncStatusMain(`Found ${changes.length} variables to update`, 'success');
+            
+        } catch (error) {
+            console.error('❌ Sync error:', error);
+            this.showSyncStatusMain('Error loading sheet data', 'error');
+        }
+    }
+
+    showPreviewMain(changes) {
+        const previewEl = document.getElementById('syncPreviewMain');
+        const contentEl = document.getElementById('previewContentMain');
+        
+        contentEl.innerHTML = changes.map(change => `
+            <div class="preview-item">
+                <div class="preview-item-name">${this.escapeHtml(change.description)}</div>
+                <div class="preview-item-change">
+                    <span class="old-value">${this.escapeHtml(change.oldValue)}</span>
+                    <span style="margin: 0 8px;">→</span>
+                    <span class="new-value">${this.escapeHtml(change.newValue)}</span>
+                </div>
+            </div>
+        `).join('');
+        
+        previewEl.style.display = 'block';
+    }
+
+    applySheetChangesMain() {
+        if (!this.pendingChanges) return;
+        
+        console.log('💾 Applying main workflow sheet changes:', this.pendingChanges);
+        
+        // Apply the changes (reuse existing logic)
+        this.pendingChanges.forEach((change, index) => {
+            console.log(`💾 Processing change ${index + 1}:`, change);
+            
+            if (change.type === 'variable') {
+                // Try different ways to update the variable value
+                const defaultValueParam = change.item.parameter?.find(p => p.key === 'defaultValue');
+                const valueParam = change.item.parameter?.find(p => p.key === 'value');
+                
+                if (defaultValueParam) {
+                    defaultValueParam.value = change.newValue;
+                } else if (valueParam) {
+                    valueParam.value = change.newValue;
+                } else if (change.item.hasOwnProperty('defaultValue')) {
+                    change.item.defaultValue = change.newValue;
+                } else {
+                    if (!change.item.parameter) change.item.parameter = [];
+                    change.item.parameter.push({
+                        key: 'defaultValue',
+                        type: 'template',
+                        value: change.newValue
+                    });
+                }
+            } else if (change.type === 'tag') {
+                const param = change.item.parameter?.find(p => 
+                    p.key === 'html' || p.key === 'customHtml'
+                );
+                if (param) {
+                    param.value = change.newValue;
+                }
+            }
+        });
+        
+        // Hide preview and show success
+        document.getElementById('syncPreviewMain').style.display = 'none';
+        this.showSyncStatusMain('✅ Changes applied successfully!', 'success');
+        
+        // Progress to step 3
+        this.proceedToStep3();
+        
+        this.pendingChanges = null;
+    }
+
+    cancelSheetChangesMain() {
+        document.getElementById('syncPreviewMain').style.display = 'none';
+        this.pendingChanges = null;
+        this.showSyncStatusMain('Changes cancelled', 'error');
+    }
+
+    showSyncStatusMain(message, type) {
+        const statusEl = document.getElementById('syncStatusMain');
+        statusEl.textContent = message;
+        statusEl.className = `sync-status-main ${type}`;
+    }
+
+    proceedToStep3() {
+        console.log('🔄 Proceeding to step 3...');
+        
+        // Update workflow steps
+        this.updateWorkflowStep(2, 'completed');
+        this.updateWorkflowStep(3, 'active');
+        
+        // Show step 3 and editor
+        document.getElementById('step3').style.display = 'block';
+        document.getElementById('editorSection').style.display = 'block';
+        
+        // Render the current tab
+        this.renderCurrentTab();
+        
+        console.log('✅ Advanced to step 3 - Review & Export');
+    }
+
+    skipToStep3() {
+        console.log('⏭️ Skipping Google Sheets sync, proceeding directly to step 3...');
+        this.proceedToStep3();
     }
 }
 
