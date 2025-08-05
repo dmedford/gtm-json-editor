@@ -36,6 +36,11 @@ yarn.lock
 .env.test.local
 .env.production.local
 
+# Configuration files (contain API keys)
+config.js
+config.local.js
+api-config.js
+
 # Test files and sample data
 test-data/
 sample-containers/

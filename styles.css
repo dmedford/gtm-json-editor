@@ -1059,6 +1059,15 @@ header p {
     font-weight: 500;
 }
 
+.status-config {
+    color: #58a6ff;
+    background: #1c2832;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
 .help-text {
     color: #8b949e;
     font-size: 12px;

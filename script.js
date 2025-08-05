@@ -9,8 +9,12 @@ class GTMEditor {
         // Google Sheets integration
         this.sheetsData = null;
         this.pendingChanges = null;
-        this.SHEET_ID = '1Q2W7RIOBpTNhtOHVmwjhcVPyJktgXQUqu-UB-ieTUSQ';
-        this.API_KEY = this.loadApiKey(); // Load from secure storage
+        
+        // Load configuration from config file (if available) or fallback to defaults
+        this.loadConfiguration();
+        
+        // Load API key from config, storage, or prompt user
+        this.API_KEY = this.loadApiKey();
         
         this.initializeEventListeners();
     }
@@ -711,30 +715,41 @@ class GTMEditor {
         }
         
         const hasStoredKey = !!localStorage.getItem('gtm_editor_api_key');
+        const hasConfigKey = !!this.CONFIG_API_KEY;
+        let statusHtml = '';
+        let helpText = '';
+        
+        if (hasConfigKey) {
+            statusHtml = '<span class="status-config">🔧 API key loaded from config.js file</span>';
+            helpText = '🔧 API key is loaded from your local config.js file (ignored by git). This is convenient for development.';
+        } else if (hasStoredKey) {
+            statusHtml = '<span class="status-saved">✅ API key saved in browser storage</span>';
+            helpText = '🔒 Your API key is stored securely in browser local storage with encoding. It never leaves your browser.';
+        } else {
+            statusHtml = '<span class="status-none">❌ No API key available</span>';
+            helpText = '🔑 No API key found. You will be prompted to enter one when using Google Sheets sync.';
+        }
+        
         apiKeySection.innerHTML = `
             <h3>🔐 API Key Management</h3>
             <div class="form-group">
                 <label>Google Sheets API Key Status:</label>
                 <div class="api-key-status">
-                    ${hasStoredKey ? 
-                        '<span class="status-saved">✅ API key saved in browser storage</span>' : 
-                        '<span class="status-none">❌ No API key stored</span>'
-                    }
+                    ${statusHtml}
                 </div>
             </div>
             <div class="form-group">
-                <button type="button" class="btn-secondary" onclick="gtmEditor.updateApiKey()">
-                    ${hasStoredKey ? '🔄 Update API Key' : '🔑 Set API Key'}
+                <button type="button" class="btn-secondary" onclick="gtmEditor.updateApiKey()" ${hasConfigKey ? 'disabled title="API key is managed via config.js file"' : ''}>
+                    ${hasConfigKey ? '🔧 Managed via config.js' : (hasStoredKey ? '🔄 Update API Key' : '🔑 Set API Key')}
                 </button>
-                ${hasStoredKey ? 
+                ${hasStoredKey && !hasConfigKey ? 
                     '<button type="button" class="btn-secondary" onclick="gtmEditor.clearApiKey(); gtmEditor.renderSettings();" style="margin-left: 10px;">🗑️ Clear API Key</button>' : 
                     ''
                 }
             </div>
             <div class="form-group">
                 <small class="help-text">
-                    🔒 Your API key is stored securely in browser local storage with encoding. 
-                    It never leaves your browser and is not shared with any servers.
+                    ${helpText}
                 </small>
             </div>
         `;
@@ -1874,6 +1889,40 @@ class GTMEditor {
         statusEl.className = `sync-status ${type}`;
     }
 
+    // Load configuration from config file or set defaults
+    loadConfiguration() {
+        // Check if config file was loaded
+        if (typeof window.GTMEditorConfig !== 'undefined') {
+            const config = window.GTMEditorConfig;
+            
+            // Load Google Sheets configuration
+            this.SHEET_ID = config.googleSheets?.sheetId || '1Q2W7RIOBpTNhtOHVmwjhcVPyJktgXQUqu-UB-ieTUSQ';
+            this.CONFIG_API_KEY = config.googleSheets?.apiKey === 'YOUR_API_KEY_HERE' ? null : config.googleSheets?.apiKey;
+            
+            // Load development settings
+            this.DEBUG_MODE = config.development?.debugMode || false;
+            this.AUTO_LOAD_CONFIG = config.development?.autoLoadConfig || false;
+            
+            // Load UI preferences
+            this.DEFAULT_TAB = config.ui?.defaultTab || 'tags';
+            
+            if (this.CONFIG_API_KEY) {
+                console.log('🔧 Configuration loaded from config.js file');
+            } else {
+                console.log('📝 Config file found but API key not set');
+            }
+        } else {
+            // Default configuration when no config file is present
+            this.SHEET_ID = '1Q2W7RIOBpTNhtOHVmwjhcVPyJktgXQUqu-UB-ieTUSQ';
+            this.CONFIG_API_KEY = null;
+            this.DEBUG_MODE = false;
+            this.AUTO_LOAD_CONFIG = false;
+            this.DEFAULT_TAB = 'tags';
+            
+            console.log('📝 No config file found - using defaults');
+        }
+    }
+
     // Simple encoding/decoding for localStorage (not cryptographically secure, but prevents casual viewing)
     encodeApiKey(key) {
         return btoa(key.split('').reverse().join(''));
@@ -1883,8 +1932,15 @@ class GTMEditor {
         return atob(encodedKey).split('').reverse().join('');
     }
     
-    // Load API key from secure browser storage
+    // Load API key from config file, browser storage, or return null
     loadApiKey() {
+        // Priority 1: Config file (for development)
+        if (this.CONFIG_API_KEY) {
+            console.log('🔧 API key loaded from config file');
+            return this.CONFIG_API_KEY;
+        }
+        
+        // Priority 2: Browser storage (for user convenience)
         try {
             const stored = localStorage.getItem('gtm_editor_api_key');
             if (stored) {
@@ -1894,6 +1950,8 @@ class GTMEditor {
         } catch (error) {
             console.warn('⚠️ Could not load stored API key:', error);
         }
+        
+        // Priority 3: No key available - will prompt user when needed
         return null;
     }
     
