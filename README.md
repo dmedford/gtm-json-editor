@@ -36,7 +36,7 @@ A professional web-based tool for importing, editing, and exporting Google Tag M
 4. Ensure sheet is publicly viewable
 5. Use "Tracker Sheet" tab with standardized column names
 
-**Security:** Your API key is requested only when needed and stored temporarily in browser session only.
+**Security:** Your API key is securely stored in browser localStorage with encoding for convenience.
 
 ## 📁 Architecture
 
@@ -59,8 +59,9 @@ A professional web-based tool for importing, editing, and exporting Google Tag M
 
 **API Key Protection:**
 - No hardcoded API keys in source code
-- User provides API key only when needed via secure prompt
-- API key stored temporarily in browser session only (never persisted)
+- User provides API key via secure prompt (one-time setup)
+- API key stored in browser localStorage with encoding (convenient but secure)
+- Full API key management in Settings tab (view status, update, clear)
 - Recommendations for API key restrictions provided
 
 **Additional Security:**

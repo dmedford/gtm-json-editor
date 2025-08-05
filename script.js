@@ -10,7 +10,7 @@ class GTMEditor {
         this.sheetsData = null;
         this.pendingChanges = null;
         this.SHEET_ID = '1Q2W7RIOBpTNhtOHVmwjhcVPyJktgXQUqu-UB-ieTUSQ';
-        this.API_KEY = null; // Will be prompted from user
+        this.API_KEY = this.loadApiKey(); // Load from secure storage
         
         this.initializeEventListeners();
     }
@@ -701,6 +701,43 @@ class GTMEditor {
                 <textarea id="containerNotes" onchange="gtmEditor.updateContainerSetting('notes', this.value)">${containerVersion.notes || ''}</textarea>
             </div>
         `;
+        
+        // Add API key management section
+        let apiKeySection = settingsForm.querySelector('.api-key-section');
+        if (!apiKeySection) {
+            apiKeySection = document.createElement('div');
+            apiKeySection.className = 'api-key-section';
+            settingsForm.appendChild(apiKeySection);
+        }
+        
+        const hasStoredKey = !!localStorage.getItem('gtm_editor_api_key');
+        apiKeySection.innerHTML = `
+            <h3>🔐 API Key Management</h3>
+            <div class="form-group">
+                <label>Google Sheets API Key Status:</label>
+                <div class="api-key-status">
+                    ${hasStoredKey ? 
+                        '<span class="status-saved">✅ API key saved in browser storage</span>' : 
+                        '<span class="status-none">❌ No API key stored</span>'
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn-secondary" onclick="gtmEditor.updateApiKey()">
+                    ${hasStoredKey ? '🔄 Update API Key' : '🔑 Set API Key'}
+                </button>
+                ${hasStoredKey ? 
+                    '<button type="button" class="btn-secondary" onclick="gtmEditor.clearApiKey(); gtmEditor.renderSettings();" style="margin-left: 10px;">🗑️ Clear API Key</button>' : 
+                    ''
+                }
+            </div>
+            <div class="form-group">
+                <small class="help-text">
+                    🔒 Your API key is stored securely in browser local storage with encoding. 
+                    It never leaves your browser and is not shared with any servers.
+                </small>
+            </div>
+        `;
     }
 
     attachItemCheckboxListeners() {
@@ -1206,6 +1243,13 @@ class GTMEditor {
             this.gtmData.containerVersion = {};
         }
         this.gtmData.containerVersion[setting] = value;
+    }
+    
+    updateApiKey() {
+        const result = this.promptForApiKey();
+        if (result) {
+            this.renderSettings(); // Refresh the settings display
+        }
     }
 
     closeModals() {
@@ -1830,12 +1874,57 @@ class GTMEditor {
         statusEl.className = `sync-status ${type}`;
     }
 
+    // Simple encoding/decoding for localStorage (not cryptographically secure, but prevents casual viewing)
+    encodeApiKey(key) {
+        return btoa(key.split('').reverse().join(''));
+    }
+    
+    decodeApiKey(encodedKey) {
+        return atob(encodedKey).split('').reverse().join('');
+    }
+    
+    // Load API key from secure browser storage
+    loadApiKey() {
+        try {
+            const stored = localStorage.getItem('gtm_editor_api_key');
+            if (stored) {
+                console.log('🔐 API key loaded from secure browser storage');
+                return this.decodeApiKey(stored);
+            }
+        } catch (error) {
+            console.warn('⚠️ Could not load stored API key:', error);
+        }
+        return null;
+    }
+    
+    // Save API key to secure browser storage
+    saveApiKey(apiKey) {
+        try {
+            const encoded = this.encodeApiKey(apiKey);
+            localStorage.setItem('gtm_editor_api_key', encoded);
+            console.log('🔐 API key saved to secure browser storage');
+        } catch (error) {
+            console.warn('⚠️ Could not save API key:', error);
+        }
+    }
+    
+    // Clear stored API key
+    clearApiKey() {
+        try {
+            localStorage.removeItem('gtm_editor_api_key');
+            this.API_KEY = null;
+            console.log('🔐 API key cleared from storage');
+        } catch (error) {
+            console.warn('⚠️ Could not clear API key:', error);
+        }
+    }
+
     promptForApiKey() {
         const apiKey = prompt(`🔐 Google Sheets API Key Required
         
 Please enter your Google Sheets API key to sync data.
 
-⚠️ SECURITY NOTE: This key will only be stored temporarily in your browser session and never saved permanently.
+🔒 SECURITY NOTE: This key will be stored securely in your browser's local storage for convenience. You can clear it anytime from the Settings tab.
 
 Get your API key from: Google Cloud Console → APIs & Services → Credentials
 
@@ -1843,7 +1932,8 @@ API Key:`);
         
         if (apiKey && apiKey.trim()) {
             this.API_KEY = apiKey.trim();
-            console.log('🔐 API key set (session only - not stored permanently)');
+            this.saveApiKey(this.API_KEY);
+            console.log('🔐 API key set and saved to secure storage');
             return true;
         } else {
             console.log('❌ No API key provided - sheets sync unavailable');

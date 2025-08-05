@@ -1021,6 +1021,50 @@ header p {
     font-size: 18px;
 }
 
+.api-key-section {
+    background: #161b22;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    margin-bottom: 20px;
+}
+
+.api-key-section h3 {
+    color: #58a6ff;
+    margin: 0 0 15px 0;
+    font-size: 18px;
+}
+
+.api-key-status {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 5px 0;
+}
+
+.status-saved {
+    color: #2ea043;
+    background: #1a472a;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-none {
+    color: #f85149;
+    background: #4c1e20;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.help-text {
+    color: #8b949e;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
