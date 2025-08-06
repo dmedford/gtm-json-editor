@@ -64,7 +64,7 @@ class GTMEditor {
         document.getElementById('syncFromSheetBtnMain').addEventListener('click', this.syncFromSheetMain.bind(this));
         document.getElementById('applyChangesBtnMain').addEventListener('click', this.applySheetChangesMain.bind(this));
         document.getElementById('cancelChangesBtnMain').addEventListener('click', this.cancelSheetChangesMain.bind(this));
-        document.getElementById('skipSyncBtn').addEventListener('click', this.skipToStep3.bind(this));
+        document.getElementById('skipSyncBtn').addEventListener('click', this.skipToStep2.bind(this));
 
         // Input tab switching
         document.querySelectorAll('.input-tab').forEach(tab => {
@@ -249,9 +249,8 @@ class GTMEditor {
             console.log('🔄 Populating folder options...');
             this.populateFolderOptions();
             
-            console.log('🔄 Updating workflow to step 2...');
-            this.updateWorkflowStep(1, 'completed');
-            this.updateWorkflowStep(2, 'active');
+            console.log('🔄 Updating workflow - activating property sync step...');
+            this.updateWorkflowStep(1, 'active');
             
             // Show step 2 (property sync)
             document.getElementById('step2').style.display = 'block';
@@ -280,9 +279,8 @@ class GTMEditor {
             this.displayContainerInfo();
             this.populateFolderOptions();
             
-            // Update workflow
-            this.updateWorkflowStep(1, 'completed');
-            this.updateWorkflowStep(2, 'active');
+            // Update workflow - Set Step 1 (Property Sync) as active
+            this.updateWorkflowStep(1, 'active');
             document.getElementById('step2').style.display = 'block';
             document.getElementById('editorSection').style.display = 'block';
             
@@ -310,9 +308,8 @@ class GTMEditor {
                 this.displayContainerInfo();
                 this.populateFolderOptions();
                 
-                // Update workflow
-                this.updateWorkflowStep(1, 'completed');
-                this.updateWorkflowStep(2, 'active');
+                // Update workflow - Set Step 1 (Property Sync) as active
+                this.updateWorkflowStep(1, 'active');
                 document.getElementById('step2').style.display = 'block';
                 document.getElementById('editorSection').style.display = 'block';
                 
@@ -382,6 +379,8 @@ class GTMEditor {
         const templateStatus = document.getElementById('templateStatus');
         const templateStatusText = document.getElementById('templateStatusText');
         const uploadLabel = document.querySelector('label[for="fileInput"]');
+        const templateOptionsTitle = document.getElementById('templateOptionsTitle');
+        const step1 = document.getElementById('step1');
         
         let statusMessage = '📁 Default template available';
         if (hasStored && hasConfigPath) {
@@ -395,6 +394,13 @@ class GTMEditor {
         templateStatusText.textContent = statusMessage;
         templateStatus.style.display = 'block';
         uploadLabel.textContent = '📁 Choose Different JSON File';
+        templateOptionsTitle.textContent = 'GTM Template Options (Template Available)';
+        
+        // Show Step 2 as the primary workflow
+        document.getElementById('step2').style.display = 'block';
+        
+        // Collapse template options to de-emphasize them
+        step1.classList.add('collapsed');
         
         console.log('📋 Template status displayed:', statusMessage);
     }
@@ -426,6 +432,20 @@ class GTMEditor {
         this.renderSettings();
         
         alert('✅ Current container saved as default template!\n\nNext time you open the tool, you can use this template without uploading the file again.');
+    }
+    
+    // Toggle template options visibility
+    toggleTemplateOptions() {
+        const templateOptionsEl = document.getElementById('step1');
+        const collapseIndicator = document.getElementById('collapseIndicator');
+        
+        templateOptionsEl.classList.toggle('collapsed');
+        
+        if (templateOptionsEl.classList.contains('collapsed')) {
+            console.log('📁 Template options collapsed');
+        } else {
+            console.log('📁 Template options expanded');
+        }
     }
 
     displayContainerInfo() {
@@ -2399,7 +2419,7 @@ API Key:`);
         this.showSyncStatusMain('✅ Changes applied successfully!', 'success');
         
         // Progress to step 3
-        this.proceedToStep3();
+        this.proceedToStep2();
         
         this.pendingChanges = null;
     }
@@ -2416,26 +2436,26 @@ API Key:`);
         statusEl.className = `sync-status-main ${type}`;
     }
 
-    proceedToStep3() {
-        console.log('🔄 Proceeding to step 3...');
+    proceedToStep2() {
+        console.log('🔄 Proceeding to step 2 (Review & Export)...');
         
-        // Update workflow steps
-        this.updateWorkflowStep(2, 'completed');
-        this.updateWorkflowStep(3, 'active');
+        // Update workflow steps - Step 1 becomes completed, Step 2 (Review) becomes active
+        this.updateWorkflowStep(1, 'completed');
+        this.updateWorkflowStep(2, 'active');
         
-        // Show step 3 and editor
+        // Show step 3 (which is visually Step 2) and editor
         document.getElementById('step3').style.display = 'block';
         document.getElementById('editorSection').style.display = 'block';
         
         // Render the current tab
         this.renderCurrentTab();
         
-        console.log('✅ Advanced to step 3 - Review & Export');
+        console.log('✅ Advanced to step 2 - Review & Export');
     }
 
-    skipToStep3() {
-        console.log('⏭️ Skipping Google Sheets sync, proceeding directly to step 3...');
-        this.proceedToStep3();
+    skipToStep2() {
+        console.log('⏭️ Skipping Google Sheets sync, proceeding directly to step 2...');
+        this.proceedToStep2();
     }
 }
 

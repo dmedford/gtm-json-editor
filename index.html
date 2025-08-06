@@ -15,30 +15,34 @@
 
         <main>
             <div class="workflow-container">
-                <div class="workflow-step" id="step1">
-                    <div class="step-header">
-                        <span class="step-number">1</span>
-                        <h2>Import GTM Template</h2>
+                <!-- Template Options - Collapsible when template is available -->
+                <div class="workflow-step template-options" id="step1">
+                    <div class="step-header" onclick="gtmEditor.toggleTemplateOptions()">
+                        <span class="step-number">⚙️</span>
+                        <h2 id="templateOptionsTitle">GTM Template Options</h2>
+                        <span class="collapse-indicator" id="collapseIndicator">▼</span>
                     </div>
-                    <p>Choose a GTM container to work with</p>
-                    
-                    <div id="templateStatus" class="template-status" style="display: none;">
-                        <div class="status-indicator">
-                            <span id="templateStatusText">📁 Default template available</span>
-                            <button id="useDefaultBtn" class="btn-primary">📋 Use Default Template</button>
+                    <div class="template-options-content" id="templateOptionsContent">
+                        <p>Choose or manage your GTM container template</p>
+                        
+                        <div id="templateStatus" class="template-status" style="display: none;">
+                            <div class="status-indicator">
+                                <span id="templateStatusText">📁 Default template available</span>
+                                <button id="useDefaultBtn" class="btn-primary">📋 Use Default Template</button>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="file-upload">
-                        <input type="file" id="fileInput" accept=".json" />
-                        <label for="fileInput" class="upload-btn">📁 Choose Different JSON File</label>
-                        <span class="file-name" id="fileName">No file selected</span>
+                        
+                        <div class="file-upload">
+                            <input type="file" id="fileInput" accept=".json" />
+                            <label for="fileInput" class="upload-btn">📁 Choose Different JSON File</label>
+                            <span class="file-name" id="fileName">No file selected</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="workflow-step" id="step2" style="display: none;">
+                <div class="workflow-step" id="step2">
                     <div class="step-header">
-                        <span class="step-number">2</span>
+                        <span class="step-number">1</span>
                         <h2>Sync with Property Data</h2>
                     </div>
                     <p>Enter the property name OR website URL to automatically update variables from your Google Sheet</p>
@@ -86,7 +90,7 @@
 
                 <div class="workflow-step" id="step3" style="display: none;">
                     <div class="step-header">
-                        <span class="step-number">3</span>
+                        <span class="step-number">2</span>
                         <h2>Review & Export</h2>
                     </div>
                     <p>Review your updated container and export when ready</p>

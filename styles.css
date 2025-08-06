@@ -60,6 +60,35 @@ header p {
     background: #0a1322;
 }
 
+.template-options .step-header {
+    cursor: pointer;
+    user-select: none;
+    justify-content: space-between;
+}
+
+.template-options.collapsed .template-options-content {
+    display: none;
+}
+
+.template-options.collapsed {
+    background: #0d1117;
+    border-color: #30363d;
+}
+
+.collapse-indicator {
+    color: #8b949e;
+    font-size: 14px;
+    transition: transform 0.2s;
+}
+
+.template-options.collapsed .collapse-indicator {
+    transform: rotate(-90deg);
+}
+
+.template-options-content {
+    padding-top: 10px;
+}
+
 .step-header {
     display: flex;
     align-items: center;
