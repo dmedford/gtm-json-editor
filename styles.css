@@ -289,6 +289,26 @@ header p {
     justify-content: flex-end;
 }
 
+.template-status {
+    background: #1c2832;
+    border: 1px solid #58a6ff;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.status-indicator span {
+    color: #58a6ff;
+    font-weight: 500;
+}
+
 .file-upload {
     display: flex;
     align-items: center;
@@ -1033,6 +1053,24 @@ header p {
     color: #58a6ff;
     margin: 0 0 15px 0;
     font-size: 18px;
+}
+
+.template-management-section {
+    background: #161b22;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    margin-bottom: 20px;
+}
+
+.template-management-section h3 {
+    color: #58a6ff;
+    margin: 0 0 15px 0;
+    font-size: 18px;
+}
+
+.template-status-info {
+    padding: 8px 0;
 }
 
 .api-key-status {

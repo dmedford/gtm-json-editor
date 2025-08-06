@@ -17,11 +17,20 @@ class GTMEditor {
         this.API_KEY = this.loadApiKey();
         
         this.initializeEventListeners();
+        
+        // Check for default template availability and show status
+        this.checkTemplateAvailability();
+        
+        // Auto-load default template if configured
+        if (this.AUTO_LOAD_TEMPLATE) {
+            this.loadDefaultTemplate();
+        }
     }
 
     initializeEventListeners() {
-        // File input
+        // File input and template management
         document.getElementById('fileInput').addEventListener('change', this.handleFileImport.bind(this));
+        document.getElementById('useDefaultBtn').addEventListener('click', this.useDefaultTemplate.bind(this));
         
         // Tab navigation
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -257,6 +266,166 @@ class GTMEditor {
             console.error('Error details:', error.message);
             alert('Error parsing JSON file: ' + error.message);
         }
+    }
+
+    // Load default template from config, localStorage, or file path
+    async loadDefaultTemplate() {
+        console.log('🔄 Attempting to load default template...');
+        
+        // Priority 1: Check for stored template in localStorage
+        const storedTemplate = this.loadStoredTemplate();
+        if (storedTemplate) {
+            console.log('✅ Loaded template from browser storage');
+            this.gtmData = storedTemplate;
+            this.displayContainerInfo();
+            this.populateFolderOptions();
+            
+            // Update workflow
+            this.updateWorkflowStep(1, 'completed');
+            this.updateWorkflowStep(2, 'active');
+            document.getElementById('step2').style.display = 'block';
+            document.getElementById('editorSection').style.display = 'block';
+            
+            document.getElementById('fileName').textContent = 'Default Template (from storage)';
+            
+            // Enable property input monitoring
+            this.onPropertyInputChangeMain();
+            
+            return true;
+        }
+        
+        // Priority 2: Load from file path if configured
+        if (this.DEFAULT_TEMPLATE_PATH) {
+            try {
+                console.log('🔄 Loading template from path:', this.DEFAULT_TEMPLATE_PATH);
+                const response = await fetch(this.DEFAULT_TEMPLATE_PATH);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const templateData = await response.json();
+                console.log('✅ Template loaded from file path');
+                
+                this.gtmData = templateData;
+                this.displayContainerInfo();
+                this.populateFolderOptions();
+                
+                // Update workflow
+                this.updateWorkflowStep(1, 'completed');
+                this.updateWorkflowStep(2, 'active');
+                document.getElementById('step2').style.display = 'block';
+                document.getElementById('editorSection').style.display = 'block';
+                
+                document.getElementById('fileName').textContent = `Default Template (${this.DEFAULT_TEMPLATE_PATH})`;
+                
+                // Enable property input monitoring
+                this.onPropertyInputChangeMain();
+                
+                // Optionally save to storage for faster future loads
+                this.saveTemplateToStorage(templateData);
+                
+                return true;
+            } catch (error) {
+                console.warn('⚠️ Failed to load template from path:', error.message);
+            }
+        }
+        
+        console.log('📝 No default template available');
+        return false;
+    }
+    
+    // Save template to localStorage for faster future loads
+    saveTemplateToStorage(templateData) {
+        try {
+            const templateString = JSON.stringify(templateData);
+            // Compress large templates by removing whitespace
+            localStorage.setItem('gtm_editor_default_template', templateString);
+            console.log('💾 Template saved to browser storage for faster loading');
+        } catch (error) {
+            console.warn('⚠️ Could not save template to storage (likely too large):', error.message);
+        }
+    }
+    
+    // Load template from localStorage
+    loadStoredTemplate() {
+        try {
+            const stored = localStorage.getItem('gtm_editor_default_template');
+            if (stored) {
+                return JSON.parse(stored);
+            }
+        } catch (error) {
+            console.warn('⚠️ Could not load stored template:', error.message);
+            // Clear corrupted data
+            localStorage.removeItem('gtm_editor_default_template');
+        }
+        return null;
+    }
+    
+    // Clear stored template
+    clearStoredTemplate() {
+        localStorage.removeItem('gtm_editor_default_template');
+        console.log('🗑️ Stored template cleared');
+    }
+    
+    // Check if default template is available and update UI
+    async checkTemplateAvailability() {
+        const hasStoredTemplate = !!this.loadStoredTemplate();
+        const hasConfigPath = !!this.DEFAULT_TEMPLATE_PATH;
+        
+        if (hasStoredTemplate || hasConfigPath) {
+            this.showTemplateStatus(hasStoredTemplate, hasConfigPath);
+        }
+    }
+    
+    // Show template availability status in Step 1
+    showTemplateStatus(hasStored, hasConfigPath) {
+        const templateStatus = document.getElementById('templateStatus');
+        const templateStatusText = document.getElementById('templateStatusText');
+        const uploadLabel = document.querySelector('label[for="fileInput"]');
+        
+        let statusMessage = '📁 Default template available';
+        if (hasStored && hasConfigPath) {
+            statusMessage = '📁 Default template available (storage + config)';
+        } else if (hasStored) {
+            statusMessage = '📁 Default template available (from storage)';
+        } else if (hasConfigPath) {
+            statusMessage = '📁 Default template available (from config)';
+        }
+        
+        templateStatusText.textContent = statusMessage;
+        templateStatus.style.display = 'block';
+        uploadLabel.textContent = '📁 Choose Different JSON File';
+        
+        console.log('📋 Template status displayed:', statusMessage);
+    }
+    
+    // Use default template (button click handler)
+    async useDefaultTemplate() {
+        console.log('🔄 Using default template...');
+        const success = await this.loadDefaultTemplate();
+        
+        if (success) {
+            console.log('✅ Default template loaded and workflow advanced');
+        } else {
+            alert('Could not load default template. Please choose a file manually.');
+        }
+    }
+    
+    // Save current container as default template
+    saveCurrentAsTemplate() {
+        if (!this.gtmData) {
+            alert('No GTM container loaded. Please load a container first.');
+            return;
+        }
+        
+        console.log('💾 Saving current container as default template...');
+        this.saveTemplateToStorage(this.gtmData);
+        
+        // Update UI to show template is now available
+        this.checkTemplateAvailability();
+        this.renderSettings();
+        
+        alert('✅ Current container saved as default template!\n\nNext time you open the tool, you can use this template without uploading the file again.');
     }
 
     displayContainerInfo() {
@@ -750,6 +919,49 @@ class GTMEditor {
             <div class="form-group">
                 <small class="help-text">
                     ${helpText}
+                </small>
+            </div>
+        `;
+        
+        // Template management section
+        let templateSection = settingsForm.querySelector('.template-management-section');
+        if (!templateSection) {
+            templateSection = document.createElement('div');
+            templateSection.className = 'template-management-section';
+            settingsForm.appendChild(templateSection);
+        }
+        
+        const hasStoredTemplate = !!this.loadStoredTemplate();
+        const hasConfigPath = !!this.DEFAULT_TEMPLATE_PATH;
+        
+        templateSection.innerHTML = `
+            <h3>📋 Template Management</h3>
+            <div class="form-group">
+                <label>Default Template Status:</label>
+                <div class="template-status-info">
+                    ${hasStoredTemplate ? 
+                        '<span class="status-saved">✅ Template saved in browser storage</span>' : 
+                        '<span class="status-none">❌ No template stored</span>'
+                    }
+                    ${hasConfigPath ? 
+                        '<br><span class="status-config">🔧 Template path configured: ' + this.DEFAULT_TEMPLATE_PATH + '</span>' : 
+                        ''
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn-secondary" onclick="gtmEditor.saveCurrentAsTemplate()" ${!this.gtmData ? 'disabled title="Load a GTM container first"' : ''}>
+                    💾 Save Current Container as Default Template
+                </button>
+                ${hasStoredTemplate ? 
+                    '<button type="button" class="btn-secondary" onclick="gtmEditor.clearStoredTemplate(); gtmEditor.renderSettings();" style="margin-left: 10px;">🗑️ Clear Stored Template</button>' : 
+                    ''
+                }
+            </div>
+            <div class="form-group">
+                <small class="help-text">
+                    💡 Save your most frequently used GTM container as a default template. This eliminates the need to upload the same file repeatedly.
+                    ${hasConfigPath ? '<br>🔧 You can also specify a template file path in your config.js file.' : ''}
                 </small>
             </div>
         `;
@@ -1903,6 +2115,10 @@ class GTMEditor {
             this.DEBUG_MODE = config.development?.debugMode || false;
             this.AUTO_LOAD_CONFIG = config.development?.autoLoadConfig || false;
             
+            // Load template configuration
+            this.DEFAULT_TEMPLATE_PATH = config.template?.defaultPath || null;
+            this.AUTO_LOAD_TEMPLATE = config.template?.autoLoad || false;
+            
             // Load UI preferences
             this.DEFAULT_TAB = config.ui?.defaultTab || 'tags';
             
@@ -1917,6 +2133,8 @@ class GTMEditor {
             this.CONFIG_API_KEY = null;
             this.DEBUG_MODE = false;
             this.AUTO_LOAD_CONFIG = false;
+            this.DEFAULT_TEMPLATE_PATH = null;
+            this.AUTO_LOAD_TEMPLATE = false;
             this.DEFAULT_TAB = 'tags';
             
             console.log('📝 No config file found - using defaults');

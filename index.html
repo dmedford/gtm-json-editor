@@ -20,10 +20,18 @@
                         <span class="step-number">1</span>
                         <h2>Import GTM Template</h2>
                     </div>
-                    <p>Upload your GTM container JSON file to get started</p>
+                    <p>Choose a GTM container to work with</p>
+                    
+                    <div id="templateStatus" class="template-status" style="display: none;">
+                        <div class="status-indicator">
+                            <span id="templateStatusText">📁 Default template available</span>
+                            <button id="useDefaultBtn" class="btn-primary">📋 Use Default Template</button>
+                        </div>
+                    </div>
+                    
                     <div class="file-upload">
                         <input type="file" id="fileInput" accept=".json" />
-                        <label for="fileInput" class="upload-btn">Choose JSON File</label>
+                        <label for="fileInput" class="upload-btn">📁 Choose Different JSON File</label>
                         <span class="file-name" id="fileName">No file selected</span>
                     </div>
                 </div>

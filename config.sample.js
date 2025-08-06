@@ -29,6 +29,16 @@ window.GTMEditorConfig = {
         autoLoadConfig: true
     },
     
+    // Default GTM template (optional)
+    template: {
+        // Path to your default GTM JSON file for automatic loading
+        // This eliminates the need to upload the same template repeatedly
+        defaultPath: null, // e.g., './templates/default-container.json'
+        
+        // Auto-load template on page load (skips Step 1)
+        autoLoad: false
+    },
+    
     // UI preferences (optional)
     ui: {
         // Default tab to show when container loads
