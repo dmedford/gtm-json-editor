@@ -1,10 +1,11 @@
 # GTM JSON Editor
 
-A professional web-based tool for importing, editing, and exporting Google Tag Manager (GTM) container JSON files with Google Sheets integration for dynamic variable updates.
+A professional web-based tool for editing Google Tag Manager (GTM) container JSON files with **streamlined workflow**, **default template system**, and **Google Sheets integration** for dynamic variable updates.
 
-## 🚀 Features
+## 🚀 Key Features
 
-- **🔄 Step-by-Step Workflow**: Import GTM Template → Sync with Property Data → Review & Export
+- **⚡ Streamlined Workflow**: Save GTM templates once, then just enter property name/URL - no more repetitive uploads!
+- **📁 Smart Template System**: Auto-detects saved templates with browser storage and config file support
 - **🔗 Google Sheets Integration**: Dynamically update GTM variables from live tracking spreadsheets
 - **🎯 Smart Variable Matching**: Automatic detection of GA4, Google Ads, and TTD variables using standardized naming
 - **🌐 Flexible Property Lookup**: Enter property name OR website URL for automatic data matching
@@ -18,16 +19,28 @@ A professional web-based tool for importing, editing, and exporting Google Tag M
 
 ## 🛠️ Quick Start
 
-**Prerequisites:** Modern web browser, GTM container export JSON file, Google Sheets API key
+### Prerequisites
+- Modern web browser
+- GTM container export JSON file (for first-time setup)
+- Google Sheets API key
 
-**Installation:** Open `index.html` directly in browser - no server required
+### Installation
+Open `index.html` directly in browser - no server required
 
-**Step-by-Step Usage:**
-1. **Import GTM Template**: Upload your GTM container JSON file
-2. **Sync with Property Data**: Enter property name OR website URL, sync from Google Sheet
-3. **Review & Export**: Preview changes, apply updates, and download modified JSON
+### Workflow
 
-**Google Sheets Setup:**
+**🎯 Regular Usage (after setup):**
+1. **Open Tool** → Default template auto-detected
+2. **Enter Property Data** → Just property name OR website URL
+3. **Export** → Download updated JSON file
+
+**⚙️ First-Time Setup:**
+1. **Click Template Options** (gear icon)
+2. **Upload GTM JSON** → Import your container
+3. **Save as Default** → Settings → Save Current Container as Default Template
+4. **Future Sessions** → Skip directly to property sync!
+
+**🔗 Google Sheets Setup:**
 1. Get API key from Google Cloud Console → APIs & Services → Credentials
 2. Enable Google Sheets API v4
 3. **Configure API Key Restrictions** (IMPORTANT for security):
@@ -36,35 +49,51 @@ A professional web-based tool for importing, editing, and exporting Google Tag M
 4. Ensure sheet is publicly viewable
 5. Use "Tracker Sheet" tab with standardized column names
 
-**Security:** Your API key is securely stored in browser localStorage with encoding for convenience.
+## 📁 Template System
 
-## 📁 Architecture
+### Smart Template Detection
+- **Browser Storage**: Saved templates load instantly
+- **Config File**: Developer-specified template paths (optional)
+- **Manual Upload**: Traditional fallback when needed
 
-**Files:** `index.html`, `styles.css`, `script.js`, `CLAUDE.md`, `README.md`
+### Template Management
+- **Save Current**: Settings → Save Current Container as Default Template
+- **Clear Stored**: Remove saved templates from browser storage
+- **Status Display**: Clear indicators showing template source
+- **One-Click Use**: "Use Default Template" button for instant loading
 
-**Core Class:** `GTMEditor` - Manages application state, UI interactions, and Google Sheets integration
+### Developer Configuration (Optional)
+Create a `config.js` file for development convenience:
 
-**🔗 Google Sheets Integration:**
-- **API Integration:** Google Sheets API v4 with configurable sheet ID and API key
-- **Smart Property Matching:** Supports both property name and website URL lookup
-- **Standardized Variable Detection:** Pattern matching for GA4, Google Ads, and TTD variables
-- **Data Mapping:** Automatic column-to-variable mapping with comprehensive coverage
-- **Change Preview:** Before/after comparison with user confirmation
-
-**Variable Detection:** Merges 6 GTM variable arrays with deduplication by variable ID
-
-**Security:** Client-side only, secure API key handling, HTML escaping for XSS prevention
+```javascript
+// config.js (git-ignored)
+window.GTMEditorConfig = {
+    googleSheets: {
+        apiKey: 'your-api-key-here',
+        sheetId: 'your-sheet-id-here'
+    },
+    template: {
+        defaultPath: './templates/my-gtm-template.json',
+        autoLoad: true  // Skip template selection entirely
+    }
+};
+```
 
 ## 🔐 Security Features
 
-**API Key Protection:**
-- No hardcoded API keys in source code
-- User provides API key via secure prompt (one-time setup)
-- API key stored in browser localStorage with encoding (convenient but secure)
-- Full API key management in Settings tab (view status, update, clear)
-- Recommendations for API key restrictions provided
+### API Key Protection
+- **Multiple Sources**: Config file (dev), browser storage (user), or manual entry
+- **Secure Storage**: Browser localStorage with encoding for convenience
+- **No Hardcoding**: No API keys in source code
+- **Full Management**: Settings tab for view status, update, clear
+- **Restrictions Guide**: Recommendations for API key security
 
-**Additional Security:**
+### Template Security
+- **Git-Ignored Config**: Template files and API keys never committed
+- **Browser-Only Storage**: Templates stored locally, never transmitted
+- **Graceful Fallbacks**: Works perfectly without templates
+
+### Additional Security
 - Client-side only processing (no server-side data storage)
 - HTML escaping to prevent XSS attacks  
 - Input validation and sanitization
@@ -99,12 +128,56 @@ Variable - TTD - CT - Schedule a Tour End
 Variable - TTD - CT - Virtual Tour
 ```
 
+## 📁 Architecture
+
+### Core Files
+- `index.html` - Main application interface
+- `styles.css` - Professional dark theme styling
+- `script.js` - GTMEditor class and application logic
+- `config.sample.js` - Template for developer configuration
+- `CLAUDE.md` - Development guidance for AI assistants
+
+### Key Classes
+- **GTMEditor**: Main application state and workflow management
+- **Template System**: Auto-loading, storage, and management
+- **Google Sheets Integration**: API calls and variable matching
+- **Workflow Management**: Step progression and UI updates
+
+### Data Flow
+1. **Template Detection** → Auto-load or manual selection
+2. **Property Sync** → Enter name/URL, fetch from sheets
+3. **Variable Matching** → Pattern-based detection and updates
+4. **Review & Export** → Preview changes, apply, download
+
+## 🎨 User Experience
+
+### Visual Workflow
+```
+⚙️ Template Options (Template Available) ← Collapsible, auto-collapsed
+1️⃣ Sync with Property Data ← PRIMARY FOCUS  
+2️⃣ Review & Export ← Full container editor
+```
+
+### Smart Interactions
+- **Auto-collapse**: Template options hide when template is available
+- **One-click actions**: Use default, save current, clear stored
+- **Status indicators**: Clear feedback on template and API key status
+- **Contextual help**: Guidance adapts based on available features
+
 ## 🐛 Known Limitations
 
 - Google Sheets API requires publicly viewable sheet or proper authentication
 - Requires standardized GTM variable naming convention for reliable matching
 - Large containers (500+ items) may have slower rendering
 - No GTM business rule validation (handled by GTM on import)
+
+## 💡 Pro Tips
+
+1. **Save Time**: Upload your most-used GTM container once, then just sync with property data
+2. **Team Workflow**: Share `config.sample.js` with teammates for consistent setup
+3. **Development**: Use config file auto-loading for seamless development experience
+4. **Security**: Restrict API keys to specific domains and Google Sheets API only
+5. **Backup**: Always test in GTM preview mode before publishing
 
 ## ⚠️ Disclaimer
 
