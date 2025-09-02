@@ -2065,22 +2065,47 @@ class GTMEditor {
         });
         
         // Find CallRail Custom HTML tag
+        console.log('🔍 Looking for CallRail Custom HTML tag...');
         const callrailTag = this.findCallRailTag();
-        if (callrailTag && propertyRow['CallRail Tag']) {
+        const callrailData = propertyRow['CallRail Tag'];
+        
+        console.log('📞 CallRail tag found:', !!callrailTag);
+        console.log('📞 CallRail data from sheet:', callrailData);
+        
+        if (callrailTag) {
+            console.log('📞 CallRail tag details:', {
+                name: callrailTag.name,
+                type: callrailTag.type,
+                parameters: callrailTag.parameter?.map(p => ({ key: p.key, type: p.type }))
+            });
+        }
+        
+        if (callrailTag && callrailData) {
             const htmlParam = callrailTag.parameter?.find(p => 
                 p.key === 'html' || p.key === 'customHtml'
             );
             
+            console.log('📞 HTML parameter found:', !!htmlParam);
             if (htmlParam) {
+                console.log('📞 Current HTML value preview:', htmlParam.value?.substring(0, 100) + '...');
+                console.log('📞 New HTML value preview:', callrailData?.substring(0, 100) + '...');
+                
                 changes.push({
                     type: 'tag',
                     item: callrailTag,
                     field: 'html',
                     oldValue: htmlParam.value || '',
-                    newValue: propertyRow['CallRail Tag'],
+                    newValue: callrailData,
                     description: `CallRail HTML Tag: ${callrailTag.name}`
                 });
+                
+                console.log('✅ CallRail change added to pending changes');
+            } else {
+                console.warn('⚠️ CallRail tag found but no html/customHtml parameter');
             }
+        } else {
+            if (!callrailTag) console.log('📞 No CallRail tag detected in container');
+            if (!callrailData) console.log('📞 No CallRail data found in sheet');
         }
         
         // Final summary
@@ -2541,11 +2566,21 @@ API Key:`);
                     });
                 }
             } else if (change.type === 'tag') {
+                console.log(`💾 Processing tag change for: ${change.item.name}`);
                 const param = change.item.parameter?.find(p => 
                     p.key === 'html' || p.key === 'customHtml'
                 );
+                
                 if (param) {
+                    console.log(`💾 Updating ${param.key} parameter`);
+                    console.log(`💾 Old value preview: ${param.value?.substring(0, 100)}...`);
+                    console.log(`💾 New value preview: ${change.newValue?.substring(0, 100)}...`);
+                    
                     param.value = change.newValue;
+                    console.log(`✅ ${change.item.name} HTML updated successfully`);
+                } else {
+                    console.warn(`⚠️ No html/customHtml parameter found in tag: ${change.item.name}`);
+                    console.log(`💾 Available parameters:`, change.item.parameter?.map(p => p.key));
                 }
             }
         });
