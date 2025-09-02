@@ -243,7 +243,6 @@ class GTMEditor {
                 console.error('❌ No containerVersion found in GTM data');
             }
             
-            document.getElementById('fileName').textContent = file.name;
             console.log('🔄 Displaying container info...');
             this.displayContainerInfo();
             
@@ -258,6 +257,21 @@ class GTMEditor {
             
             // Enable the main property input
             this.onPropertyInputChangeMain();
+            
+            // Check if user wants to save this as default template
+            const saveAsTemplate = document.getElementById('saveAsTemplateCheckbox').checked;
+            if (saveAsTemplate) {
+                console.log('💾 Auto-saving uploaded file as default template...');
+                this.saveTemplateToStorage(this.gtmData);
+                console.log('✅ File saved as default template');
+                
+                // Update template status display
+                this.checkTemplateAvailability();
+                
+                document.getElementById('fileName').textContent = `${file.name} (Saved as Default Template)`;
+            } else {
+                document.getElementById('fileName').textContent = file.name;
+            }
             
             console.log('✅ GTM JSON import completed successfully!');
             

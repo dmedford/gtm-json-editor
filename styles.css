@@ -89,6 +89,37 @@ header p {
     padding-top: 10px;
 }
 
+.template-save-option {
+    margin-top: 15px;
+    padding: 12px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #e6edf3;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+
+.template-save-option .help-text {
+    color: #8b949e;
+    font-size: 12px;
+    line-height: 1.4;
+    margin: 0;
+}
+
 .step-header {
     display: flex;
     align-items: center;
