@@ -1565,12 +1565,69 @@ class GTMEditor {
         const dataStr = JSON.stringify(this.gtmData, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
         
+        // Generate dynamic filename based on property input
+        const filename = this.generateExportFilename();
+        
         const link = document.createElement('a');
         link.href = URL.createObjectURL(dataBlob);
-        link.download = `gtm-container-modified-${new Date().toISOString().split('T')[0]}.json`;
+        link.download = filename;
         link.click();
         
         URL.revokeObjectURL(link.href);
+        console.log(`📥 Exported GTM container as: ${filename}`);
+    }
+    
+    // Generate dynamic export filename based on property input
+    generateExportFilename() {
+        const dateStr = new Date().toISOString().split('T')[0];
+        let propertyName = '';
+        
+        // Try to get property name from input fields
+        const nameInput = document.getElementById('propertyNameInputMain').value.trim();
+        const urlInput = document.getElementById('propertyUrlInputMain').value.trim();
+        
+        if (nameInput) {
+            propertyName = this.sanitizeFilename(nameInput);
+        } else if (urlInput) {
+            // Extract property name from URL (use domain without TLD)
+            const domain = this.cleanUrl(urlInput);
+            propertyName = this.extractPropertyNameFromDomain(domain);
+        }
+        
+        // Build filename
+        if (propertyName) {
+            const filename = `gtm-container-${propertyName}-${dateStr}.json`;
+            console.log(`📝 Generated filename with property: ${filename}`);
+            return filename;
+        } else {
+            const filename = `gtm-container-modified-${dateStr}.json`;
+            console.log(`📝 Generated default filename: ${filename}`);
+            return filename;
+        }
+    }
+    
+    // Extract meaningful property name from domain
+    extractPropertyNameFromDomain(domain) {
+        if (!domain) return '';
+        
+        // Remove common TLDs and get the main part
+        const mainPart = domain
+            .replace(/\.(com|org|net|io|co\.uk|gov|edu)$/, '')
+            .replace(/[^a-zA-Z0-9]/g, '-')
+            .toLowerCase();
+            
+        console.log(`🏷️ Extracted property name from domain "${domain}": "${mainPart}"`);
+        return mainPart;
+    }
+    
+    // Sanitize filename for valid file system names
+    sanitizeFilename(name) {
+        return name
+            .toLowerCase()
+            .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
+            .replace(/\s+/g, '-') // Replace spaces with hyphens
+            .replace(/-+/g, '-') // Replace multiple hyphens with single
+            .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
     }
 
     // Google Sheets Integration Methods
