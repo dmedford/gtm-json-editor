@@ -65,6 +65,7 @@ class GTMEditor {
         document.getElementById('applyChangesBtnMain').addEventListener('click', this.applySheetChangesMain.bind(this));
         document.getElementById('cancelChangesBtnMain').addEventListener('click', this.cancelSheetChangesMain.bind(this));
         document.getElementById('skipSyncBtn').addEventListener('click', this.skipToStep2.bind(this));
+        document.getElementById('resetToTemplateBtn').addEventListener('click', this.resetToTemplate.bind(this));
 
         // Input tab switching
         document.querySelectorAll('.input-tab').forEach(tab => {
@@ -432,6 +433,47 @@ class GTMEditor {
         this.renderSettings();
         
         alert('✅ Current container saved as default template!\n\nNext time you open the tool, you can use this template without uploading the file again.');
+    }
+    
+    // Reset to default template and clear all changes
+    async resetToTemplate() {
+        console.log('🔄 Resetting to default template...');
+        
+        // Clear current state
+        this.selectedItems.clear();
+        this.pendingChanges = null;
+        this.currentEditItem = null;
+        
+        // Clear input fields
+        document.getElementById('propertyNameInputMain').value = '';
+        document.getElementById('propertyUrlInputMain').value = '';
+        
+        // Clear sync status and preview
+        document.getElementById('syncStatusMain').textContent = '';
+        document.getElementById('syncStatusMain').className = 'sync-status-main';
+        document.getElementById('syncPreviewMain').style.display = 'none';
+        
+        // Hide Step 3 and editor if visible
+        document.getElementById('step3').style.display = 'none';
+        document.getElementById('editorSection').style.display = 'none';
+        
+        // Reset workflow steps
+        this.updateWorkflowStep(1, 'active');
+        this.updateWorkflowStep(2, '');
+        
+        // Reload default template
+        const success = await this.loadDefaultTemplate();
+        
+        if (success) {
+            console.log('✅ Reset to default template completed');
+            this.showSyncStatusMain('Reset to default template', 'success');
+        } else {
+            console.log('⚠️ No default template available for reset');
+            this.showSyncStatusMain('No default template available - please load a container', 'error');
+        }
+        
+        // Update button states
+        this.onPropertyInputChangeMain();
     }
     
     // Toggle template options visibility
@@ -1725,12 +1767,35 @@ class GTMEditor {
     cleanUrl(url) {
         if (!url) return '';
         
-        // Remove protocol, www, trailing slashes, and convert to lowercase
-        return url
-            .toLowerCase()
-            .replace(/^https?:\/\//, '')
-            .replace(/^www\./, '')
-            .replace(/\/$/, '');
+        try {
+            // Create URL object to properly parse the URL
+            let urlObj;
+            
+            // Add protocol if missing for proper parsing
+            if (!url.match(/^https?:\/\//)) {
+                urlObj = new URL('https://' + url);
+            } else {
+                urlObj = new URL(url);
+            }
+            
+            // Extract hostname and remove www prefix
+            let domain = urlObj.hostname.toLowerCase();
+            domain = domain.replace(/^www\./, '');
+            
+            console.log(`🔗 URL cleaned: "${url}" → "${domain}"`);
+            return domain;
+            
+        } catch (error) {
+            // Fallback to simple string cleaning if URL parsing fails
+            console.warn('⚠️ URL parsing failed, using fallback cleaning:', error.message);
+            
+            return url
+                .toLowerCase()
+                .replace(/^https?:\/\//, '')
+                .replace(/^www\./, '')
+                .replace(/\/.*$/, '')  // Remove everything after first slash
+                .replace(/:\d+$/, ''); // Remove port numbers
+        }
     }
 
     findGTMMatches(propertyRow) {

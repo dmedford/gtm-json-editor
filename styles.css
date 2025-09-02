@@ -269,6 +269,24 @@ header p {
     transform: translateY(-1px);
 }
 
+.reset-btn {
+    background: #6e7681;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.reset-btn:hover {
+    background: #8b949e;
+    transform: translateY(-1px);
+}
+
 .sync-status-main {
     margin-top: 10px;
     font-size: 14px;
