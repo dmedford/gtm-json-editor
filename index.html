@@ -245,8 +245,23 @@
         </div>
     </div>
 
-    <!-- Optional config file for development (ignored by git) -->
-    <script src="config.js" onerror="console.log('📝 No config.js found - using manual API key entry')"></script>
+    <!-- Configuration loading - development vs production -->
+    <script>
+        // Load appropriate config based on environment
+        // Development: config.js (git-ignored, contains real API keys)
+        // Production: config.production.js (safe template, prompts for API keys)
+        const isLocalhost = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1' || 
+                           window.location.hostname === '';
+        
+        const configFile = isLocalhost ? 'config.js' : 'config.production.js';
+        const script = document.createElement('script');
+        script.src = configFile;
+        script.onerror = function() {
+            console.log(`📝 No ${configFile} found - using manual API key entry`);
+        };
+        document.head.appendChild(script);
+    </script>
     
     <script src="script.js"></script>
 </body>

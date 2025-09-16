@@ -2303,10 +2303,20 @@ class GTMEditor {
             // Load UI preferences
             this.DEFAULT_TAB = config.ui?.defaultTab || 'tags';
             
+            // Check if in production environment
+            this.IS_PRODUCTION = config.production?.environment === 'production';
+            this.SHOW_SECURITY_REMINDERS = config.production?.showSecurityReminders || false;
+            
             if (this.CONFIG_API_KEY) {
                 console.log('🔧 Configuration loaded from config.js file');
             } else {
                 console.log('📝 Config file found but API key not set');
+                
+                // Show production security notice
+                if (this.IS_PRODUCTION) {
+                    console.log('🌐 Production environment detected');
+                    console.log('🔒 API keys will be requested from users for security');
+                }
             }
         } else {
             // Default configuration when no config file is present
@@ -2317,6 +2327,8 @@ class GTMEditor {
             this.DEFAULT_TEMPLATE_PATH = null;
             this.AUTO_LOAD_TEMPLATE = false;
             this.DEFAULT_TAB = 'tags';
+            this.IS_PRODUCTION = false;
+            this.SHOW_SECURITY_REMINDERS = false;
             
             console.log('📝 No config file found - using defaults');
         }

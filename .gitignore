@@ -41,6 +41,9 @@ config.js
 config.local.js
 api-config.js
 
+# Note: config.production.js is intentionally NOT ignored
+# It contains no secrets and is needed for deployment
+
 # Test files and sample data
 test-data/
 sample-containers/
