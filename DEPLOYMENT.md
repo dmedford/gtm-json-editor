@@ -3,13 +3,13 @@
 ## 🚀 Vercel Deployment
 
 ### Quick Deploy
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/dmedford/gtm-json-editor)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/gtm-json-editor)
 
 ### Manual Deployment Steps
 
 1. **Fork or Clone Repository**
    ```bash
-   git clone https://github.com/dmedford/gtm-json-editor.git
+   git clone https://github.com/yourusername/gtm-json-editor.git
    cd gtm-json-editor
    ```
 

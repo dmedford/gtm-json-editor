@@ -254,13 +254,32 @@
                            window.location.hostname === '127.0.0.1' || 
                            window.location.hostname === '';
         
+        const isProduction = window.location.hostname.includes('.vercel.app') || 
+                            window.location.hostname.includes('.netlify.app') ||
+                            window.location.hostname.includes('.netlify.com') ||
+                            (!isLocalhost && window.location.hostname !== '');
+        
         const configFile = isLocalhost ? 'config.js' : 'config.production.js';
         const script = document.createElement('script');
         script.src = configFile;
         script.onerror = function() {
             console.log(`📝 No ${configFile} found - using manual API key entry`);
+            if (isProduction) {
+                console.log('🌐 Production environment detected - API keys will be requested from users');
+            }
         };
         document.head.appendChild(script);
+        
+        // Log environment detection
+        if (isLocalhost) {
+            console.log('🏠 Development environment detected (localhost)');
+        } else if (window.location.hostname.includes('.netlify.')) {
+            console.log('🌐 Netlify production environment detected');
+        } else if (window.location.hostname.includes('.vercel.')) {
+            console.log('🌐 Vercel production environment detected');
+        } else {
+            console.log('🌐 Custom domain production environment detected');
+        }
     </script>
     
     <script src="script.js"></script>
