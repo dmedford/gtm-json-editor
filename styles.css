@@ -672,26 +672,55 @@ header p {
 }
 
 .export-section {
-    padding: 20px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px 20px;
     border-top: 1px solid #30363d;
     text-align: center;
     background: #0d1117;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    transition: transform 0.3s ease;
+}
+
+.export-section.hidden {
+    transform: translateY(100%);
+}
+
+/* Add padding to body to prevent content from being hidden behind sticky export */
+body.editor-active {
+    padding-bottom: 80px;
 }
 
 .export-btn {
     background: #2ea043;
     color: white;
-    padding: 12px 24px;
+    padding: 12px 32px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-size: 16px;
-    font-weight: 500;
-    transition: background-color 0.2s;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(46, 160, 67, 0.3);
+    min-width: 200px;
 }
 
 .export-btn:hover {
     background: #238636;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(46, 160, 67, 0.4);
+}
+
+.export-btn:disabled {
+    background: #21262d;
+    color: #6e7681;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
 }
 
 /* Modal Styles */
@@ -1194,6 +1223,20 @@ header p {
 @media (max-width: 768px) {
     .container {
         padding: 10px;
+    }
+    
+    body.editor-active {
+        padding-bottom: 90px;
+    }
+    
+    .export-section {
+        padding: 12px 15px;
+    }
+    
+    .export-btn {
+        padding: 10px 24px;
+        font-size: 14px;
+        min-width: 150px;
     }
     
     .bulk-actions {

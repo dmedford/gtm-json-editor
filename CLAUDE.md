@@ -11,6 +11,7 @@ Professional client-side GTM container JSON editor with **streamlined workflow**
 **Run:** Open `index.html` in browser (no server required)
 **Debug:** Browser console (F12) - emoji-prefixed logging with detailed pattern matching
 **Test:** Use default template or upload GTM JSON, test property sync with name/URL, verify all 10+ variable updates
+**Deploy:** Use Vercel or Netlify one-click deploy buttons in README.md
 
 ## Architecture
 
@@ -132,6 +133,14 @@ window.GTMEditorConfig = {
 - **User Convenience:** Save current container, one-click usage
 - **Security:** Git-ignored config files, browser-only storage
 
+**Sticky Export Bar System:**
+- **Fixed Positioning:** Export button fixed at bottom viewport with backdrop blur
+- **Smart Activation:** Only appears when editor is active (body.editor-active class)
+- **Responsive Design:** Mobile-optimized sizing and spacing
+- **Body Padding Management:** Automatic padding to prevent content overlap
+- **Enhanced Styling:** Professional shadow, glow effects, hover animations
+- **Implementation:** CSS fixed positioning + JavaScript body class management
+
 **Google Sheets Integration:**
 - **API Integration:** Google Sheets API v4 with fetch() calls to `sheets.googleapis.com` (A:AZ columns)
 - **Dual Property Lookup:** Supports property name OR website URL matching with `findPropertyRowByInput()`
@@ -152,9 +161,27 @@ window.GTMEditorConfig = {
 
 **Security:** HTML escaping, client-side processing, git-ignored config files, API key encoding
 
-**UI:** Professional dark theme, collapsible template options, Settings tab with comprehensive management
+**UI:** Professional dark theme, collapsible template options, Settings tab with comprehensive management, sticky export bar
 
 **Logging:** Emoji prefixes - 🔄 🏷️ ⚡ 🔢 📁 🔍 ✏️ 📝 💾 📋 🔗 ⚙️
+
+### Deployment Architecture
+
+**Environment Detection:** Automatic detection of localhost vs production environments
+- **Development:** `config.js` (git-ignored, contains real API keys)
+- **Production:** `config.production.js` (safe template, prompts users for API keys)
+- **Detection Logic:** Checks for `.vercel.app`, `.netlify.app`, or custom domains
+
+**Security Model:**
+- **No Server-Side Secrets:** Production config contains no real API keys
+- **User-Managed Keys:** Each user enters and manages their own Google Sheets API key
+- **Client-Side Storage:** API keys stored only in user's browser localStorage
+- **Security Headers:** Automatic HSTS, CSP, X-Frame-Options via platform config
+
+**Platform Support:**
+- **Vercel:** `vercel.json` with security headers and static site deployment
+- **Netlify:** `netlify.toml` with security headers, redirects, and caching rules
+- **Both Platforms:** Identical functionality and security measures
 
 ### User Experience Flow
 
@@ -222,6 +249,68 @@ Variable - TTD - CT - Virtual Tour
 - Large containers (500+ items) slower rendering
 - No GTM business rule validation
 
+## Production Deployment
+
+### Platform Configuration
+
+**Vercel Setup (`vercel.json`):**
+- Static site deployment (no build step)
+- Security headers: HSTS, CSP, X-Frame-Options, X-Content-Type-Options
+- Automatic HTTPS and SSL certificates
+- Global CDN distribution
+
+**Netlify Setup (`netlify.toml`):**
+- Static site deployment (no build step)
+- Identical security headers to Vercel
+- Additional caching rules for performance
+- Redirect handling for SPA behavior
+- Form handling capabilities (future enhancement)
+
+**Environment Files:**
+- `config.production.js` - Safe template with no secrets, prompts users for API keys
+- `config.js` - Git-ignored development file with real API keys
+- Environment detection in `index.html` loads appropriate config
+
+### Security Implementation
+
+**Production Security Headers:**
+```
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-XSS-Protection: 1; mode=block
+Strict-Transport-Security: max-age=31536000
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://sheets.googleapis.com
+```
+
+**API Key Management:**
+- Production: Users prompted to enter their own Google Sheets API key
+- Development: Optional `config.js` file can contain API keys for convenience
+- Storage: Browser localStorage only, never transmitted to servers
+- Management: Settings tab provides key status, update, and clear functions
+
+### Deployment Process
+
+**Pre-Deployment:**
+1. All secrets in `config.js` (git-ignored, not deployed)
+2. `config.production.js` contains no real API keys
+3. Environment detection script in `index.html` loads appropriate config
+4. Platform-specific configuration files (`vercel.json` or `netlify.toml`)
+
+**One-Click Deploy:**
+1. Fork repository to user's GitHub account
+2. Click deploy button (Vercel or Netlify)
+3. Platform automatically deploys static files
+4. Security headers applied automatically
+5. HTTPS certificate provisioned
+6. Application ready for production use
+
+**Post-Deployment:**
+1. Users access deployed URL
+2. Application detects production environment
+3. Loads `config.production.js` (safe template)
+4. Prompts users for their own API keys when needed
+5. All processing happens client-side
+
 ## Debugging
 
 **Template System Issues:**
@@ -246,3 +335,10 @@ Variable - TTD - CT - Virtual Tour
 - **API Key Problems:** Check multi-source loading priority and Settings tab status
 - **Config File Not Loading:** Verify file exists, script tag placement, global object
 - **Pattern Matching Failures:** Verify GTM variables follow exact naming convention
+
+**Deployment Issues:**
+- **Environment Detection Wrong:** Check console logs for environment detection messages
+- **Security Headers Missing:** Verify platform config files (`vercel.json` or `netlify.toml`)
+- **API Key Prompting Not Working:** Check production config loading and console errors
+- **Build Failures:** Ensure no build step required (static site deployment)
+- **Domain Issues:** Verify DNS configuration for custom domains

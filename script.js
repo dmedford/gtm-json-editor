@@ -2630,6 +2630,9 @@ API Key:`);
         document.getElementById('step3').style.display = 'block';
         document.getElementById('editorSection').style.display = 'block';
         
+        // Add body class for sticky export bar
+        document.body.classList.add('editor-active');
+        
         // Render the current tab
         this.renderCurrentTab();
         

@@ -16,15 +16,41 @@ A professional web-based tool for editing Google Tag Manager (GTM) container JSO
 - **🔀 Bulk Operations**: Select/deselect all, status toggle, folder assignment, find & replace, delete
 - **🎨 Professional Dark Theme**: GitHub-inspired dark mode with polished UI
 - **🔍 Real-time Search & Filter**: Find items by name, type, or status
+- **📌 Sticky Export Bar**: Always-visible export button that floats at the bottom - no more scrolling!
+
+## 🚀 Deployment Options
+
+### Quick Deploy
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/gtm-json-editor)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/yourusername/gtm-json-editor)
+
+**Choose Your Platform:**
+- **Vercel**: Excellent for developers, zero-config deployment
+- **Netlify**: Great for teams, built-in form handling and analytics
+- **Local Development**: Open `index.html` directly in browser
+
+Both platforms provide:
+✅ Automatic HTTPS and SSL certificates
+✅ Global CDN for fast worldwide access
+✅ Enterprise security headers
+✅ Production API key security
+✅ Custom domain support
+
+### Deployment Security
+**Production environments automatically:**
+- Load `config.production.js` (no real API keys)
+- Prompt users for their own API keys
+- Store keys only in user's browser localStorage
+- Apply security headers (HSTS, CSP, X-Frame-Options, etc.)
 
 ## 🛠️ Quick Start
 
 ### Prerequisites
 - Modern web browser
 - GTM container export JSON file (for first-time setup)
-- Google Sheets API key
+- Google Sheets API key (get from [Google Cloud Console](https://console.cloud.google.com/))
 
-### Installation
+### Local Development
 Open `index.html` directly in browser - no server required
 
 ### Workflow
@@ -131,11 +157,18 @@ Variable - TTD - CT - Virtual Tour
 ## 📁 Architecture
 
 ### Core Files
-- `index.html` - Main application interface
+- `index.html` - Main application interface with environment detection
 - `styles.css` - Professional dark theme styling
 - `script.js` - GTMEditor class and application logic
 - `config.sample.js` - Template for developer configuration
+- `config.production.js` - Production-safe configuration (no secrets)
 - `CLAUDE.md` - Development guidance for AI assistants
+
+### Deployment Files
+- `vercel.json` - Vercel deployment configuration with security headers
+- `netlify.toml` - Netlify deployment configuration with security headers
+- `DEPLOYMENT.md` - Comprehensive Vercel deployment guide
+- `DEPLOYMENT-NETLIFY.md` - Comprehensive Netlify deployment guide
 
 ### Key Classes
 - **GTMEditor**: Main application state and workflow management
@@ -183,6 +216,33 @@ Variable - TTD - CT - Virtual Tour
 
 Not affiliated with Google/GTM. Always backup containers before changes and test in development environment. Keep API keys secure.
 
+## 🌐 Production Deployment
+
+### Environment Detection
+The application automatically detects its environment:
+- **Local Development** (`localhost`): Loads `config.js` (your API keys)
+- **Vercel Production** (`.vercel.app`): Loads `config.production.js` (secure template)
+- **Netlify Production** (`.netlify.app`): Loads `config.production.js` (secure template)
+- **Custom Domain**: Loads `config.production.js` (secure template)
+
+### Production Security Features
+- **No Hardcoded Secrets**: Production config contains no real API keys
+- **User-Managed Keys**: Each user enters their own API key
+- **Secure Headers**: Automatic security headers (HSTS, CSP, X-Frame-Options)
+- **Client-Side Only**: No server-side data storage or processing
+- **API Key Restrictions**: Guidance for proper Google Cloud API restrictions
+
+### Deployment Steps
+1. **Fork Repository**: Create your own copy
+2. **Choose Platform**: Vercel or Netlify (both excellent)
+3. **Deploy**: Use one-click deploy buttons above
+4. **Custom Domain** (Optional): Configure in platform dashboard
+5. **Share with Team**: Distribute URL, users manage their own API keys
+
+See detailed guides: [Vercel](./DEPLOYMENT.md) | [Netlify](./DEPLOYMENT-NETLIFY.md)
+
 ## 📞 Support
 
 For issues: Check browser console (F12), verify API key and sheet access, ensure valid GTM JSON, open GitHub issue with console logs.
+
+**Deployment Issues**: Check platform dashboard logs and deployment guides above.
