@@ -262,7 +262,7 @@ class GTMEditor {
             const saveAsTemplate = document.getElementById('saveAsTemplateCheckbox').checked;
             if (saveAsTemplate) {
                 console.log('💾 Auto-saving uploaded file as default template...');
-                this.saveTemplateToStorage(this.gtmData);
+                this.saveTemplateToStorage(this.gtmData, file.name);
                 console.log('✅ File saved as default template');
                 
                 // Update template status display
@@ -290,7 +290,7 @@ class GTMEditor {
         const storedTemplate = this.loadStoredTemplate();
         if (storedTemplate) {
             console.log('✅ Loaded template from browser storage');
-            this.gtmData = storedTemplate;
+            this.gtmData = storedTemplate.data || storedTemplate; // Handle both new and old format
             this.displayContainerInfo();
             this.populateFolderOptions();
             
@@ -299,7 +299,13 @@ class GTMEditor {
             document.getElementById('step2').style.display = 'block';
             document.getElementById('editorSection').style.display = 'block';
             
-            document.getElementById('fileName').textContent = 'Default Template (from storage)';
+            // Update filename display with metadata
+            const metadata = storedTemplate.metadata;
+            if (metadata) {
+                document.getElementById('fileName').textContent = `${metadata.fileName} (from storage)`;
+            } else {
+                document.getElementById('fileName').textContent = 'Default Template (from storage)';
+            }
             
             // Enable property input monitoring
             this.onPropertyInputChangeMain();
@@ -334,7 +340,8 @@ class GTMEditor {
                 this.onPropertyInputChangeMain();
                 
                 // Optionally save to storage for faster future loads
-                this.saveTemplateToStorage(templateData);
+                const configFileName = this.DEFAULT_TEMPLATE_PATH.split('/').pop() || 'config-template.json';
+                this.saveTemplateToStorage(templateData, configFileName);
                 
                 return true;
             } catch (error) {
@@ -347,15 +354,38 @@ class GTMEditor {
     }
     
     // Save template to localStorage for faster future loads
-    saveTemplateToStorage(templateData) {
+    saveTemplateToStorage(templateData, fileName = null) {
         try {
-            const templateString = JSON.stringify(templateData);
-            // Compress large templates by removing whitespace
+            // Create template object with metadata
+            const templateWithMeta = {
+                data: templateData,
+                metadata: {
+                    fileName: fileName || 'Default Template',
+                    containerName: templateData.containerVersion?.name || 'Unknown Container',
+                    savedDate: new Date().toISOString(),
+                    itemCounts: this.getContainerItemCounts(templateData)
+                }
+            };
+            
+            const templateString = JSON.stringify(templateWithMeta);
             localStorage.setItem('gtm_editor_default_template', templateString);
-            console.log('💾 Template saved to browser storage for faster loading');
+            console.log('💾 Template saved to browser storage with metadata:', templateWithMeta.metadata);
         } catch (error) {
             console.warn('⚠️ Could not save template to storage (likely too large):', error.message);
         }
+    }
+    
+    // Get container item counts for display
+    getContainerItemCounts(data) {
+        if (!data?.containerVersion) return 'Unknown items';
+        
+        const cv = data.containerVersion;
+        const tags = (cv.tag || []).length;
+        const triggers = (cv.trigger || []).length;
+        const variables = this.getAllVariables(data).length;
+        const folders = (cv.folder || []).length;
+        
+        return `${tags} tags, ${triggers} triggers, ${variables} variables, ${folders} folders`;
     }
     
     // Load template from localStorage
@@ -363,7 +393,22 @@ class GTMEditor {
         try {
             const stored = localStorage.getItem('gtm_editor_default_template');
             if (stored) {
-                return JSON.parse(stored);
+                const parsed = JSON.parse(stored);
+                // Handle both old format (direct data) and new format (with metadata)
+                if (parsed.data && parsed.metadata) {
+                    return parsed; // New format with metadata
+                } else {
+                    // Old format - convert to new format
+                    return {
+                        data: parsed,
+                        metadata: {
+                            fileName: 'Default Template',
+                            containerName: parsed.containerVersion?.name || 'Unknown Container',
+                            savedDate: 'Unknown date',
+                            itemCounts: this.getContainerItemCounts(parsed)
+                        }
+                    };
+                }
             }
         } catch (error) {
             console.warn('⚠️ Could not load stored template:', error.message);
@@ -392,21 +437,61 @@ class GTMEditor {
     // Show template availability status in Step 1
     showTemplateStatus(hasStored, hasConfigPath) {
         const templateStatus = document.getElementById('templateStatus');
-        const templateStatusText = document.getElementById('templateStatusText');
+        const templateName = document.getElementById('templateName');
+        const templateSource = document.getElementById('templateSource');
+        const templateMeta = document.getElementById('templateMeta');
+        const containerName = document.getElementById('containerName');
+        const itemCounts = document.getElementById('itemCounts');
+        const savedDate = document.getElementById('savedDate');
         const uploadLabel = document.querySelector('label[for="fileInput"]');
         const templateOptionsTitle = document.getElementById('templateOptionsTitle');
         const step1 = document.getElementById('step1');
         
-        let statusMessage = '📁 Default template available';
-        if (hasStored && hasConfigPath) {
-            statusMessage = '📁 Default template available (storage + config)';
-        } else if (hasStored) {
-            statusMessage = '📁 Default template available (from storage)';
-        } else if (hasConfigPath) {
-            statusMessage = '📁 Default template available (from config)';
+        // Get template metadata
+        let templateMetadata = null;
+        let sourceText = '';
+        let fileName = 'Default Template';
+        
+        if (hasStored) {
+            const storedTemplate = this.loadStoredTemplate();
+            if (storedTemplate && storedTemplate.metadata) {
+                templateMetadata = storedTemplate.metadata;
+                fileName = templateMetadata.fileName;
+            }
         }
         
-        templateStatusText.textContent = statusMessage;
+        // Determine source and display text
+        if (hasStored && hasConfigPath) {
+            sourceText = 'from browser storage + config file';
+        } else if (hasStored) {
+            sourceText = 'from browser storage';
+        } else if (hasConfigPath) {
+            sourceText = `from config file (${this.DEFAULT_TEMPLATE_PATH})`;
+            fileName = this.DEFAULT_TEMPLATE_PATH.split('/').pop() || 'config template';
+        }
+        
+        // Update UI elements
+        templateName.textContent = fileName;
+        templateSource.textContent = sourceText;
+        
+        // Show metadata if available
+        if (templateMetadata) {
+            containerName.textContent = `Container: ${templateMetadata.containerName}`;
+            itemCounts.textContent = templateMetadata.itemCounts;
+            
+            // Format saved date
+            if (templateMetadata.savedDate && templateMetadata.savedDate !== 'Unknown date') {
+                const date = new Date(templateMetadata.savedDate);
+                savedDate.textContent = `Saved: ${date.toLocaleDateString()}`;
+            } else {
+                savedDate.textContent = '';
+            }
+            
+            templateMeta.style.display = 'flex';
+        } else {
+            templateMeta.style.display = 'none';
+        }
+        
         templateStatus.style.display = 'block';
         uploadLabel.textContent = '📁 Choose Different JSON File';
         templateOptionsTitle.textContent = 'GTM Template Options (Template Available)';
@@ -417,7 +502,7 @@ class GTMEditor {
         // Collapse template options to de-emphasize them
         step1.classList.add('collapsed');
         
-        console.log('📋 Template status displayed:', statusMessage);
+        console.log('📋 Template status displayed:', fileName, sourceText);
     }
     
     // Use default template (button click handler)
@@ -440,7 +525,12 @@ class GTMEditor {
         }
         
         console.log('💾 Saving current container as default template...');
-        this.saveTemplateToStorage(this.gtmData);
+        
+        // Generate filename from container name
+        const containerName = this.gtmData.containerVersion?.name || 'GTM Container';
+        const fileName = `${containerName}.json`;
+        
+        this.saveTemplateToStorage(this.gtmData, fileName);
         
         // Update UI to show template is now available
         this.checkTemplateAvailability();
