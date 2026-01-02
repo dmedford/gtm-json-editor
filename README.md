@@ -5,7 +5,7 @@ A professional web-based tool for editing Google Tag Manager (GTM) container JSO
 ## 🚀 Key Features
 
 - **⚡ Streamlined Workflow**: Save GTM templates once, then just enter property name/URL - no more repetitive uploads!
-- **📁 Smart Template System**: Auto-detects saved templates with browser storage and config file support
+- **📁 Smart Template System**: Auto-detects saved templates with rich metadata display, browser storage and config file support
 - **🔗 Google Sheets Integration**: Dynamically update GTM variables from live tracking spreadsheets
 - **🎯 Smart Variable Matching**: Automatic detection of GA4, Google Ads, and TTD variables using standardized naming
 - **🌐 Flexible Property Lookup**: Enter property name OR website URL for automatic data matching
@@ -78,14 +78,16 @@ Open `index.html` directly in browser - no server required
 ## 📁 Template System
 
 ### Smart Template Detection
-- **Browser Storage**: Saved templates load instantly
-- **Config File**: Developer-specified template paths (optional)
+- **Browser Storage**: Saved templates load instantly with rich metadata display
+- **Config File**: Developer-specified template paths (optional)  
 - **Manual Upload**: Traditional fallback when needed
+- **Template Metadata**: Shows actual file names, container details, save dates, and item counts
 
 ### Template Management
 - **Save Current**: Settings → Save Current Container as Default Template
 - **Clear Stored**: Remove saved templates from browser storage
-- **Status Display**: Clear indicators showing template source
+- **Enhanced Display**: Shows file names, container metadata, source indicators, and save dates
+- **Smart File Naming**: Auto-generates meaningful names from container data
 - **One-Click Use**: "Use Default Template" button for instant loading
 
 ### Developer Configuration (Optional)
@@ -194,6 +196,8 @@ Variable - TTD - CT - Virtual Tour
 ### Smart Interactions
 - **Auto-collapse**: Template options hide when template is available
 - **One-click actions**: Use default, save current, clear stored
+- **Rich Template Display**: File names, container metadata, item counts, and save dates
+- **Smart File Naming**: Auto-generates meaningful names from GTM container data
 - **Status indicators**: Clear feedback on template and API key status
 - **Contextual help**: Guidance adapts based on available features
 

@@ -51,21 +51,31 @@ Professional client-side GTM container JSON editor with **streamlined workflow**
 ### Template System Architecture
 
 **Template Storage Priority:**
-1. **Browser localStorage** - Instant loading of saved templates
+1. **Browser localStorage** - Instant loading of saved templates with rich metadata
 2. **Config file path** - Developer-specified template files
 3. **Manual upload** - Traditional fallback
 
+**Template Metadata Structure:**
+- **fileName:** Original or generated file name
+- **containerName:** GTM container name from JSON data  
+- **savedDate:** ISO timestamp of when template was saved
+- **itemCounts:** Formatted string showing tags, triggers, variables, folders count
+
 **Key Template Methods:**
 - `loadDefaultTemplate()` - Smart template loading with multiple sources
-- `saveTemplateToStorage()` - Save current container as default
+- `saveTemplateToStorage(data, fileName)` - Save container with metadata
+- `getContainerItemCounts()` - Calculate and format item statistics
 - `checkTemplateAvailability()` - Detect and show template status
+- `showTemplateStatus()` - Enhanced display with file names and metadata
 - `toggleTemplateOptions()` - Collapsible template management
 - `useDefaultTemplate()` - One-click template loading
 
 **Template Workflow Integration:**
 - Auto-collapse template options when available
+- Enhanced template status display with file names and metadata
 - Direct progression to property sync step
 - Contextual UI updates based on template availability
+- Professional template information layout with container statistics
 - Settings tab template management interface
 
 ### Configuration System
@@ -111,7 +121,7 @@ window.GTMEditorConfig = {
 **Template System:**
 - `loadDefaultTemplate()`, `saveTemplateToStorage()`, `loadStoredTemplate()`, `clearStoredTemplate()`
 - `checkTemplateAvailability()`, `showTemplateStatus()`, `toggleTemplateOptions()`
-- `saveCurrentAsTemplate()`, `useDefaultTemplate()`
+- `saveCurrentAsTemplate()`, `useDefaultTemplate()`, `getContainerItemCounts()`
 
 **Workflow:** `updateWorkflowStep()`, `proceedToStep2()`, `skipToStep2()`
 **File:** `handleFileImport()`, `exportJSON()`
@@ -128,6 +138,10 @@ window.GTMEditorConfig = {
 **Smart Template System:**
 - **Multi-source Loading:** localStorage → config file → manual upload
 - **Automatic Detection:** Check availability on page load
+- **Rich Metadata Storage:** File names, container details, save dates, item counts
+- **Enhanced Display:** Professional UI showing template information and statistics
+- **Backward Compatibility:** Handles old format templates gracefully
+- **Smart File Naming:** Auto-generates meaningful names from container data
 - **UI State Management:** Collapsible options, contextual messaging
 - **Developer Support:** Config file paths, auto-loading
 - **User Convenience:** Save current container, one-click usage
