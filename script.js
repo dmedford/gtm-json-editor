@@ -1982,8 +1982,7 @@ class GTMEditor {
         
         // Find GA4 Measurement ID variable
         console.log('🔍 Searching for GA4 Measurement ID variable...');
-        const ga4Patterns = ['ga4', 'measurement', 'tracking', 'google analytics'];
-        const ga4Variable = this.findVariableByPattern(allVariables, ga4Patterns);
+        const ga4Variable = this.findVariableBySpecificPattern(allVariables, ['variable', 'ga4']);
         console.log('🔍 GA4 variable search result:', ga4Variable ? ga4Variable.name : 'NOT FOUND');
         console.log('🔍 Sheet GA4 value:', propertyRow['GA4 Measurement ID']);
         
@@ -2001,8 +2000,7 @@ class GTMEditor {
         
         // Find Conversion ID variable (using Conversion ID column K)
         console.log('🔍 Searching for Conversion ID variable...');
-        const conversionIdPatterns = ['conversion', 'conv', 'ads', 'google ads', 'account'];
-        const conversionIdVariable = this.findVariableByPattern(allVariables, conversionIdPatterns);
+        const conversionIdVariable = this.findVariableBySpecificPattern(allVariables, ['variable', 'gads']);
         console.log('🔍 Conversion ID variable search result:', conversionIdVariable ? conversionIdVariable.name : 'NOT FOUND');
         console.log('🔍 Sheet Conversion ID value:', propertyRow['Conversion ID']);
         
@@ -2020,14 +2018,8 @@ class GTMEditor {
         
         // Find Facebook Pixel ID variable (Column AM)
         console.log('🔍 Searching for Facebook Pixel ID variable...');
-        // Use specific pattern matching to require both facebook/fb/meta AND pixel
-        let fbPixelVariable = this.findVariableBySpecificPattern(allVariables, ['facebook', 'pixel']);
-        if (!fbPixelVariable) {
-            fbPixelVariable = this.findVariableBySpecificPattern(allVariables, ['fb', 'pixel']);
-        }
-        if (!fbPixelVariable) {
-            fbPixelVariable = this.findVariableBySpecificPattern(allVariables, ['meta', 'pixel']);
-        }
+        // Use precise pattern matching for "Variable - Facebook" prefix (follows platform naming convention)
+        const fbPixelVariable = this.findVariableBySpecificPattern(allVariables, ['variable', 'facebook']);
         console.log('🔍 Facebook Pixel ID variable search result:', fbPixelVariable ? fbPixelVariable.name : 'NOT FOUND');
         
         // Try multiple possible column names for FB Pixel ID
