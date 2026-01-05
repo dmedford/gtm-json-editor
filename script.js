@@ -2020,8 +2020,14 @@ class GTMEditor {
         
         // Find Facebook Pixel ID variable (Column AM)
         console.log('🔍 Searching for Facebook Pixel ID variable...');
-        const fbPixelPatterns = ['facebook', 'pixel', 'fb', 'meta'];
-        const fbPixelVariable = this.findVariableByPattern(allVariables, fbPixelPatterns);
+        // Use specific pattern matching to require both facebook/fb/meta AND pixel
+        let fbPixelVariable = this.findVariableBySpecificPattern(allVariables, ['facebook', 'pixel']);
+        if (!fbPixelVariable) {
+            fbPixelVariable = this.findVariableBySpecificPattern(allVariables, ['fb', 'pixel']);
+        }
+        if (!fbPixelVariable) {
+            fbPixelVariable = this.findVariableBySpecificPattern(allVariables, ['meta', 'pixel']);
+        }
         console.log('🔍 Facebook Pixel ID variable search result:', fbPixelVariable ? fbPixelVariable.name : 'NOT FOUND');
         
         // Try multiple possible column names for FB Pixel ID
