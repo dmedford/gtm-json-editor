@@ -2018,6 +2018,28 @@ class GTMEditor {
             });
         }
         
+        // Find Facebook Pixel ID variable (Column AM)
+        console.log('🔍 Searching for Facebook Pixel ID variable...');
+        const fbPixelPatterns = ['facebook', 'pixel', 'fb', 'meta'];
+        const fbPixelVariable = this.findVariableByPattern(allVariables, fbPixelPatterns);
+        console.log('🔍 Facebook Pixel ID variable search result:', fbPixelVariable ? fbPixelVariable.name : 'NOT FOUND');
+        
+        // Try multiple possible column names for FB Pixel ID
+        const fbPixelValue = propertyRow['FB Pixel ID'] || propertyRow['Facebook Pixel ID'] || propertyRow['Meta Pixel ID'] || propertyRow['Pixel ID'];
+        console.log('🔍 Sheet FB Pixel ID value:', fbPixelValue);
+        
+        if (fbPixelVariable && fbPixelValue) {
+            console.log('✅ Adding Facebook Pixel ID change');
+            changes.push({
+                type: 'variable',
+                item: fbPixelVariable,
+                field: 'defaultValue',
+                oldValue: fbPixelVariable.parameter?.find(p => p.key === 'defaultValue')?.value || '',
+                newValue: fbPixelValue,
+                description: `Facebook Pixel ID Variable: ${fbPixelVariable.name}`
+            });
+        }
+        
         // Debug: Show all variables that might be label variables
         console.log('🔍 All variables for label matching:');
         allVariables.forEach((variable, index) => {

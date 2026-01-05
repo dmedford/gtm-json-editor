@@ -129,10 +129,11 @@ window.GTMEditorConfig = {
 
 ## 🎯 Supported Variables
 
-**Automatic Updates (10+ variables):**
+**Automatic Updates (11+ variables):**
 - GA4 Measurement ID
 - Google Ads Conversion ID  
 - Google Ads Conversion Labels (Apply Start/End, Contact Start/End, Tour Start/End, Virtual Tour)
+- Facebook Pixel ID
 - CallRail HTML Tag
 - TTD Conversion Tracking (Apply, Contact, Tour, Virtual Tour - when data available)
 
@@ -147,6 +148,7 @@ Variable - GAds - Conversion Label - Contact End
 Variable - GAds - Conversion Label - Tour Start
 Variable - GAds - Conversion Label - Tour End
 Variable - GAds - Conversion Label - Virtual Tour
+Variable - Facebook - Pixel ID
 Variable - TTD - CT - Apply Start
 Variable - TTD - CT - Apply End
 Variable - TTD - CT - Contact Start

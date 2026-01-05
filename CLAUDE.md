@@ -159,7 +159,7 @@ window.GTMEditorConfig = {
 - **API Integration:** Google Sheets API v4 with fetch() calls to `sheets.googleapis.com` (A:AZ columns)
 - **Dual Property Lookup:** Supports property name OR website URL matching with `findPropertyRowByInput()`
 - **Standardized Pattern Matching:** Reliable variable detection using consistent naming conventions
-- **Comprehensive Updates:** 10+ variables including GA4, Google Ads labels, TTD tracking, CallRail
+- **Comprehensive Updates:** 11+ variables including GA4, Google Ads labels, Facebook Pixel ID, TTD tracking, CallRail
 - **Change Preview:** Before/after comparison with user confirmation via `showPreviewMain()`
 - **Smart Workflow:** Automatic progression through steps with skip options
 
@@ -245,9 +245,10 @@ Variable - GAds - Conversion Label - Tour End
 Variable - GAds - Conversion Label - Virtual Tour
 ```
 
-**GA4 & TTD Variables:**
+**GA4, Facebook & TTD Variables:**
 ```
 Variable - GA4 - Measurement ID
+Variable - Facebook - Pixel ID
 Variable - TTD - CT - Apply Start
 Variable - TTD - CT - Apply End
 Variable - TTD - CT - Contact Start
