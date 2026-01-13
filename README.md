@@ -7,7 +7,7 @@ A professional web-based tool for editing Google Tag Manager (GTM) container JSO
 - **⚡ Streamlined Workflow**: Save GTM templates once, then just enter property name/URL - no more repetitive uploads!
 - **📁 Smart Template System**: Auto-detects saved templates with rich metadata display, browser storage and config file support
 - **🔗 Google Sheets Integration**: Dynamically update GTM variables from live tracking spreadsheets
-- **🎯 Smart Variable Matching**: Automatic detection of GA4, Google Ads, and TTD variables using standardized naming
+- **🎯 Smart Variable Matching**: Automatic detection of GA4, Google Ads, Facebook, and TTD variables using platform-specific naming conventions
 - **🌐 Flexible Property Lookup**: Enter property name OR website URL for automatic data matching
 - **👀 Preview Changes**: Review all updates before applying with before/after comparison
 - **📊 Comprehensive Updates**: Updates 10+ variables including GA4 ID, Conversion Labels, CallRail HTML
@@ -138,8 +138,14 @@ window.GTMEditorConfig = {
 - TTD Conversion Tracking (Apply, Contact, Tour, Virtual Tour - when data available)
 
 **Required GTM Variable Naming Convention:**
+
+Uses platform-specific prefixes for precise variable targeting:
+
 ```
+# Google Analytics 4
 Variable - GA4 - Measurement ID
+
+# Google Ads (GAds prefix)
 Variable - GAds - Conversion ID
 Variable - GAds - Conversion Label - Apply Start
 Variable - GAds - Conversion Label - Apply End
@@ -148,7 +154,11 @@ Variable - GAds - Conversion Label - Contact End
 Variable - GAds - Conversion Label - Tour Start
 Variable - GAds - Conversion Label - Tour End
 Variable - GAds - Conversion Label - Virtual Tour
+
+# Facebook/Meta (Facebook prefix)
 Variable - Facebook - Pixel ID
+
+# The Trade Desk (TTD prefix)
 Variable - TTD - CT - Apply Start
 Variable - TTD - CT - Apply End
 Variable - TTD - CT - Contact Start
@@ -157,6 +167,14 @@ Variable - TTD - CT - Schedule a Tour Start
 Variable - TTD - CT - Schedule a Tour End
 Variable - TTD - CT - Virtual Tour
 ```
+
+**Pattern Matching Logic:**
+- **GAds variables**: Matched by `Variable - GAds` prefix
+- **Facebook variables**: Matched by `Variable - Facebook` prefix  
+- **TTD variables**: Matched by `Variable - TTD` prefix
+- **GA4 variables**: Matched by `Variable - GA4` prefix
+
+This ensures precise targeting with zero cross-platform conflicts.
 
 ## 📁 Architecture
 

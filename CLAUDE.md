@@ -131,7 +131,7 @@ window.GTMEditorConfig = {
 **Bulk:** `selectAllItems()`, `applyBulkChanges()`, `bulkDeleteItems()`
 **Property Input:** `switchInputTab()`, `getCurrentPropertyInput()`, `findPropertyRowByInput()`, `cleanUrl()`
 **Sheets:** `syncFromSheetMain()`, `findGTMMatches()`, `getAllVariables()`, `showPreviewMain()`, `applySheetChangesMain()`
-**Pattern Matching:** `findVariableByPattern()`, `findVariableBySpecificPattern()`
+**Pattern Matching:** `findVariableByPattern()`, `findVariableBySpecificPattern()` - Platform-specific prefix matching
 
 ### Implementation Details
 
@@ -158,7 +158,7 @@ window.GTMEditorConfig = {
 **Google Sheets Integration:**
 - **API Integration:** Google Sheets API v4 with fetch() calls to `sheets.googleapis.com` (A:AZ columns)
 - **Dual Property Lookup:** Supports property name OR website URL matching with `findPropertyRowByInput()`
-- **Standardized Pattern Matching:** Reliable variable detection using consistent naming conventions
+- **Platform-Specific Pattern Matching:** Precise variable detection using platform naming conventions (GAds, Facebook, TTD, GA4 prefixes)
 - **Comprehensive Updates:** 11+ variables including GA4, Google Ads labels, Facebook Pixel ID, TTD tracking, CallRail
 - **Change Preview:** Before/after comparison with user confirmation via `showPreviewMain()`
 - **Smart Workflow:** Automatic progression through steps with skip options
@@ -233,7 +233,9 @@ window.GTMEditorConfig = {
 
 ## Required GTM Variable Naming Convention
 
-**Google Ads Variables:**
+**Platform-Specific Prefixes for Precise Targeting:**
+
+**Google Ads Variables (GAds prefix):**
 ```
 Variable - GAds - Conversion ID
 Variable - GAds - Conversion Label - Apply Start
@@ -247,9 +249,9 @@ Variable - GAds - Conversion Label - Virtual Tour
 
 **GA4, Facebook & TTD Variables:**
 ```
-Variable - GA4 - Measurement ID
-Variable - Facebook - Pixel ID
-Variable - TTD - CT - Apply Start
+Variable - GA4 - Measurement ID         # GA4 prefix
+Variable - Facebook - Pixel ID          # Facebook prefix  
+Variable - TTD - CT - Apply Start       # TTD prefix
 Variable - TTD - CT - Apply End
 Variable - TTD - CT - Contact Start
 Variable - TTD - CT - Contact End
@@ -257,6 +259,14 @@ Variable - TTD - CT - Schedule a Tour Start
 Variable - TTD - CT - Schedule a Tour End
 Variable - TTD - CT - Virtual Tour
 ```
+
+**Pattern Matching Implementation:**
+- **Google Ads**: `['variable', 'gads']` matches `Variable - GAds` prefix
+- **Facebook**: `['variable', 'facebook']` matches `Variable - Facebook` prefix
+- **TTD**: `['variable', 'ttd']` matches `Variable - TTD` prefix  
+- **GA4**: `['variable', 'ga4']` matches `Variable - GA4` prefix
+
+This ensures zero cross-platform variable conflicts and precise targeting.
 
 **Limitations:** 
 - Google Sheets API requires publicly viewable sheet or authentication
