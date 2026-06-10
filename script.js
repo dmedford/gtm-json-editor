@@ -2119,7 +2119,7 @@ class GTMEditor {
             }
         });
         
-        // Find TTD Conversion Label variables (columns AO-AY)
+        // Find TTD Conversion Label variables (sheet columns AQ-AY: Apply/Contact/Tour/Virtual/Site Visit/Retargeting)
         const ttdLabelMappings = [
             { 
                 ttdPattern: ['ttd', 'ct', 'apply', 'start'],
@@ -2145,9 +2145,19 @@ class GTMEditor {
                 ttdPattern: ['ttd', 'ct', 'schedule', 'tour', 'end'],
                 column: 'TTD - Schedule a Tour End CT'
             },
-            { 
+            {
                 ttdPattern: ['ttd', 'ct', 'virtual', 'tour'],
                 column: 'TTD - Virtual Tour CT'
+            },
+            {
+                ttdPattern: ['ttd', 'ct', 'site', 'visit'],
+                column: 'TTD - Site Visit CT'
+            },
+            {
+                // '- rt' (not 'rt') is required: bare 'rt' is a substring of "Virtual"/"Start"
+                // and would falsely match other TTD variables. This isolates "...CT - RT".
+                ttdPattern: ['ttd', 'ct', '- rt'],
+                column: 'TTD - Retargeting CT'
             }
         ];
         
@@ -2224,7 +2234,7 @@ class GTMEditor {
         changes.forEach((change, index) => {
             console.log(`  ${index + 1}. ${change.description}: "${change.oldValue}" → "${change.newValue}"`);
         });
-        console.log('🎯 Expected 10 variables: GA4 ID, Conversion ID, 4 GAds Labels, CallRail, 3 TTD (if data exists)');
+        console.log('🎯 Expected: GA4 ID, Conversion ID, GAds Labels, CallRail, up to 9 TTD CT (Apply/Contact/Tour Start+End, Virtual Tour, Site Visit, Retargeting) where data exists');
         
         this.pendingChanges = changes;
         return changes;
