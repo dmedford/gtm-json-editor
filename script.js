@@ -2119,6 +2119,19 @@ class GTMEditor {
             }
         });
         
+        // TTD account-level IDs (sheet columns AO-AP): Advertiser ID + Universal Pixel ID.
+        // Not conversion labels — siblings of GA4 ID / Conversion ID. Patterns omit 'ct'.
+        const ttdIdMappings = [
+            {
+                ttdPattern: ['ttd', 'adv'],
+                column: 'TTD - Advertiser ID'
+            },
+            {
+                ttdPattern: ['ttd', 'upx'],
+                column: 'TTD - UPX ID'
+            }
+        ];
+
         // Find TTD Conversion Label variables (sheet columns AQ-AY: Apply/Contact/Tour/Virtual/Site Visit/Retargeting)
         const ttdLabelMappings = [
             { 
@@ -2161,25 +2174,26 @@ class GTMEditor {
             }
         ];
         
-        ttdLabelMappings.forEach((mapping, index) => {
-            console.log(`🔍 Trying TTD label mapping ${index + 1}:`);
+        // Process IDs (AO-AP) and conversion labels (AQ-AY) through one loop
+        [...ttdIdMappings, ...ttdLabelMappings].forEach((mapping, index) => {
+            console.log(`🔍 Trying TTD mapping ${index + 1}:`);
             console.log(`  TTD pattern: [${mapping.ttdPattern.join(', ')}]`);
             console.log(`  Column: ${mapping.column}`);
             console.log(`  Column value: "${propertyRow[mapping.column]}"`);
 
-            // Look for TTD label variables
-            const ttdLabelVariable = this.findVariableBySpecificPattern(allVariables, mapping.ttdPattern);
-            console.log(`  TTD match result:`, ttdLabelVariable ? ttdLabelVariable.name : 'NO MATCH');
-            
-            if (ttdLabelVariable && propertyRow[mapping.column]) {
-                console.log('✅ Found TTD label variable:', ttdLabelVariable.name, 'for column:', mapping.column);
+            // Look for the TTD variable by specific pattern
+            const ttdVariable = this.findVariableBySpecificPattern(allVariables, mapping.ttdPattern);
+            console.log(`  TTD match result:`, ttdVariable ? ttdVariable.name : 'NO MATCH');
+
+            if (ttdVariable && propertyRow[mapping.column]) {
+                console.log('✅ Found TTD variable:', ttdVariable.name, 'for column:', mapping.column);
                 changes.push({
                     type: 'variable',
-                    item: ttdLabelVariable,
+                    item: ttdVariable,
                     field: 'defaultValue',
-                    oldValue: ttdLabelVariable.parameter?.find(p => p.key === 'defaultValue')?.value || '',
+                    oldValue: ttdVariable.parameter?.find(p => p.key === 'defaultValue')?.value || '',
                     newValue: propertyRow[mapping.column],
-                    description: `TTD Label Variable: ${ttdLabelVariable.name}`
+                    description: `TTD Variable: ${ttdVariable.name}`
                 });
             }
         });
@@ -2234,7 +2248,7 @@ class GTMEditor {
         changes.forEach((change, index) => {
             console.log(`  ${index + 1}. ${change.description}: "${change.oldValue}" → "${change.newValue}"`);
         });
-        console.log('🎯 Expected: GA4 ID, Conversion ID, GAds Labels, CallRail, up to 9 TTD CT (Apply/Contact/Tour Start+End, Virtual Tour, Site Visit, Retargeting) where data exists');
+        console.log('🎯 Expected: GA4 ID, Conversion ID, GAds Labels, CallRail, up to 11 TTD (Advertiser ID, UPX ID + 9 CT: Apply/Contact/Tour Start+End, Virtual Tour, Site Visit, Retargeting) where data exists');
         
         this.pendingChanges = changes;
         return changes;
