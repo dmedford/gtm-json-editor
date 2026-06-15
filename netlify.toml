@@ -27,10 +27,11 @@
     Cache-Control = "no-store, no-cache, must-revalidate"
 
 [[headers]]
-  # Long cache for static assets
+  # styles.css also has no content hash, so "immutable" would pin a year-old
+  # stylesheet after a deploy. Revalidate each load like script.js.
   for = "/styles.css"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
   # script.js has no content hash in its filename, so it must revalidate on
